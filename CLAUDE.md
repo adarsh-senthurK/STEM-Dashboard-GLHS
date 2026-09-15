@@ -20,13 +20,18 @@ questions.
 **Supabase** (project `stemrc`, free tier, org "GLHS STEMRC"); hosting is
 **Vercel** (project `stem-dashboard-glhs`, Hobby tier) at
 https://stem-dashboard-glhs.vercel.app. Role (`student` vs `admin`) comes from
-the `profiles` table. Accounts are created by an admin in the Supabase dashboard
-(Authentication → Add user); a trigger auto-creates the profile row.
+the `profiles` table. Students self-register on the login page (Create Account:
+name, email, password → `auth.signUp` with name in user metadata); a DB trigger
+auto-creates their profile as `student`. Email confirmation is DISABLED in
+Supabase auth settings (free-tier SMTP can't reach student inboxes). Admins are
+promoted by setting `role = 'admin'` on the profile row.
 
 The app opens on a **public homepage** (`HomePage` in App.jsx) with club info,
 officers, and a "Member Login" button that leads to `LoginPage` → the portal.
+Signed-in users can hop between portal and homepage ("View Homepage" in the
+sidebar ↔ "Open Portal" on the homepage) via the `view` state in `App`.
 Theme: Green Level colors — green for interactive elements (`green-700`), navy
-for headings/identity (`blue-900`/`blue-950`).
+for identity, the hero band, the portal sidebar, and the footer (`blue-950`).
 
 ## The 30-second mental model
 

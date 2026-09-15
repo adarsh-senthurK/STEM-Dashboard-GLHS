@@ -824,7 +824,8 @@ const HOME_JOIN_STEPS = [
   { n: 4, title: 'Compete or publish', desc: 'Enter NCSEF or NCSAS in the spring, and publish your write-up in the journal either way.' },
 ]
 
-function HomePage({ onLoginClick }) {
+function HomePage({ onLoginClick, signedIn = false }) {
+  const loginLabel = signedIn ? 'Open Portal' : 'Member Login'
   const navLinks = [
     { href: '#about',        label: 'About' },
     { href: '#projects',     label: 'Projects & Service' },
@@ -836,8 +837,19 @@ function HomePage({ onLoginClick }) {
 
   return (
     <div className="min-h-screen bg-white text-black antialiased">
+      {/* ---------- TOP BAR ---------- */}
+      <div className="bg-blue-950 text-blue-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 h-9 flex items-center justify-between text-xs">
+          <p className="truncate">Green Level High School · Cary, NC</p>
+          <div className="flex items-center gap-5 flex-shrink-0">
+            <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer" className="hover:text-white transition">@glstemrc</a>
+            <button onClick={onLoginClick} className="hover:text-white transition font-semibold">{loginLabel}</button>
+          </div>
+        </div>
+      </div>
+
       {/* ---------- NAV ---------- */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 h-16 flex items-center justify-between gap-4">
           <a href="#top" className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 bg-blue-950 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -858,30 +870,31 @@ function HomePage({ onLoginClick }) {
           </nav>
           <button onClick={onLoginClick}
             className="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition flex-shrink-0">
-            Member Login
+            {loginLabel}
           </button>
         </div>
       </header>
 
       {/* ---------- HERO ---------- */}
-      <section id="top" className="border-b border-gray-200">
+      <section id="top" className="bg-blue-950 text-white">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-16 items-start">
           <div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-blue-950 leading-[1.08] tracking-tight">
-              Student research at<br className="hidden sm:block" /> Green Level High School
+            <p className="text-sm font-semibold text-green-400">Welcome to STEMRC</p>
+            <h1 className="mt-3 text-4xl sm:text-5xl font-bold leading-[1.08] tracking-tight">
+              Attend our biweekly meetings to learn how to research.
             </h1>
-            <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
+            <p className="mt-6 text-lg text-blue-100 leading-relaxed max-w-xl">
               STEMRC members design and run their own research projects and inventions, on
-              almost any topic, and enter them in North Carolina's science fairs. Meetings are
-              every other week. No prior research experience is expected.
+              almost any topic, and enter them in North Carolina's science fairs. No prior
+              research experience is expected.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button onClick={onLoginClick}
-                className="bg-green-700 text-white px-6 py-3 rounded-md text-sm font-semibold hover:bg-green-800 transition">
-                Member Login
+                className="bg-green-700 text-white px-6 py-3 rounded-md text-sm font-semibold hover:bg-green-600 transition">
+                {loginLabel}
               </button>
               <a href="#join"
-                className="px-6 py-3 rounded-md text-sm font-semibold border border-gray-300 text-blue-950 hover:border-blue-950 transition">
+                className="px-6 py-3 rounded-md text-sm font-semibold border border-white/25 text-white hover:border-white transition">
                 How joining works
               </a>
             </div>
@@ -891,26 +904,26 @@ function HomePage({ onLoginClick }) {
                 ['Who can join', 'All grades, every STEM discipline'],
                 ['Workload', 'About 45 minutes a week outside meetings'],
               ].map(([term, def]) => (
-                <div key={term} className="border-t-2 border-blue-950 pt-3">
-                  <dt className="text-sm font-bold text-blue-950">{term}</dt>
-                  <dd className="mt-1 text-sm text-gray-600 leading-snug">{def}</dd>
+                <div key={term} className="border-t-2 border-green-500 pt-3">
+                  <dt className="text-sm font-bold text-white">{term}</dt>
+                  <dd className="mt-1 text-sm text-blue-200 leading-snug">{def}</dd>
                 </div>
               ))}
             </dl>
           </div>
 
-          <div className="bg-blue-950 text-white rounded-2xl p-7 sm:p-8">
-            <h2 className="text-lg font-bold">The season ahead</h2>
-            <p className="mt-1 text-sm text-blue-200">Exact dates firm up at fall meetings.</p>
-            <ul className="mt-6 divide-y divide-white/10">
+          <div className="bg-white text-black rounded-2xl p-7 sm:p-8 shadow-xl shadow-blue-900/30">
+            <h2 className="text-lg font-bold text-blue-950">The season ahead</h2>
+            <p className="mt-1 text-sm text-gray-500">Exact dates firm up at fall meetings.</p>
+            <ul className="mt-6 divide-y divide-gray-100">
               {HOME_SEASON.map((s, i) => (
                 <li key={i} className="py-3 flex items-baseline gap-4">
-                  <span className="text-xs font-bold text-green-400 uppercase w-24 flex-shrink-0">{s.when}</span>
-                  <span className="text-sm text-blue-50">{s.what}</span>
+                  <span className="text-xs font-bold text-green-700 uppercase w-24 flex-shrink-0">{s.when}</span>
+                  <span className="text-sm text-gray-700">{s.what}</span>
                 </li>
               ))}
             </ul>
-            <a href="#competitions" className="mt-5 inline-block text-sm text-green-400 hover:text-green-300 transition underline underline-offset-4 decoration-green-400/40">
+            <a href="#competitions" className="mt-5 inline-block text-sm font-semibold text-green-700 hover:text-green-800 transition underline underline-offset-4 decoration-green-700/30">
               More on each competition
             </a>
           </div>
@@ -918,7 +931,7 @@ function HomePage({ onLoginClick }) {
       </section>
 
       {/* ---------- PHOTO STRIP ---------- */}
-      <section className="bg-gray-50 border-b border-gray-200">
+      <section className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <MediaPlaceholder label="Club meeting" className="aspect-[4/3] md:col-span-2 md:aspect-auto" />
@@ -960,6 +973,10 @@ function HomePage({ onLoginClick }) {
       <section className="bg-green-50/60 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
           <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">What the club does</h2>
+          <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
+            The biweekly meeting is the core of the club; everything else runs alongside it.
+            Slides and materials from every presentation stay available to members in the portal.
+          </p>
           <div className="mt-8 grid md:grid-cols-2 gap-5">
             {HOME_PROGRAMS.map(p => (
               <div key={p.title} className="bg-white border border-gray-200 rounded-xl p-6">
@@ -1063,6 +1080,20 @@ function HomePage({ onLoginClick }) {
               </div>
             ))}
           </div>
+          <div className="mt-8 bg-white border border-gray-200 rounded-xl px-6 py-5 flex flex-wrap items-center gap-x-8 gap-y-2">
+            <p className="text-sm font-bold text-blue-950">Helpful links</p>
+            {[
+              ['NCSEF', 'https://ncsef.org'],
+              ['NCSAS', 'https://ncsas.org'],
+              ['ISEF rules & forms', 'https://www.societyforscience.org/isef/'],
+              ['Our Instagram', 'https://www.instagram.com/glstemrc'],
+            ].map(([label, href]) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer"
+                className="text-sm text-green-700 font-semibold hover:text-green-800 transition underline underline-offset-4 decoration-green-700/30">
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -1072,12 +1103,12 @@ function HomePage({ onLoginClick }) {
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">The member portal</h2>
             <p className="mt-5 text-blue-100 leading-relaxed">
-              Members run the club through this site. Accounts are created for accepted
-              members at the start of the year.
+              Members run the club through this site. Once accepted, create your account
+              with your school email and you're in.
             </p>
             <button onClick={onLoginClick}
               className="mt-7 bg-white text-blue-950 px-6 py-3 rounded-md text-sm font-semibold hover:bg-blue-50 transition">
-              Sign in
+              {signedIn ? 'Open Portal' : 'Sign in or create an account'}
             </button>
           </div>
           <div className="grid sm:grid-cols-2 gap-x-8 gap-y-7">
@@ -1183,7 +1214,7 @@ function HomePage({ onLoginClick }) {
               <a href="#about" className="block hover:text-white transition">About</a>
               <a href="#competitions" className="block hover:text-white transition">Competitions</a>
               <a href="#journal" className="block hover:text-white transition">Journal</a>
-              <button onClick={onLoginClick} className="block hover:text-white transition">Member Login</button>
+              <button onClick={onLoginClick} className="block hover:text-white transition">{loginLabel}</button>
             </div>
           </div>
           <div>
@@ -1209,23 +1240,58 @@ function HomePage({ onLoginClick }) {
    ================================================================ */
 
 function LoginPage({ onBack }) {
+  const [mode, setMode]         = useState('signin')   // 'signin' | 'signup'
+  const [name, setName]         = useState('')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
+  const [notice, setNotice]     = useState('')
   const [loading, setLoading]   = useState(false)
 
-  const signIn = useCallback(async (e) => {
+  const switchMode = (m) => { setMode(m); setError(''); setNotice('') }
+
+  const submit = useCallback(async (e) => {
     if (e) e.preventDefault()
-    setLoading(true); setError('')
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    if (authError) {
-      setError(authError.message === 'Invalid login credentials'
-        ? 'Incorrect email or password.'
-        : authError.message)
-      setLoading(false)
+    setLoading(true); setError(''); setNotice('')
+
+    if (mode === 'signin') {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      if (authError) {
+        setError(authError.message === 'Invalid login credentials'
+          ? 'Incorrect email or password.'
+          : authError.message)
+        setLoading(false)
+      }
+      // On success the auth listener in App switches to the portal.
+      return
     }
-    // On success the auth listener in App switches to the portal.
-  }, [email, password])
+
+    // Sign up — new accounts are students by default.
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      setLoading(false)
+      return
+    }
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name.trim() } },
+    })
+    if (signUpError) {
+      setError(signUpError.message.includes('already registered')
+        ? 'An account with this email already exists. Sign in instead.'
+        : signUpError.message)
+      setLoading(false)
+      return
+    }
+    if (data.session) {
+      // Signed up and signed in; the auth listener takes it from here.
+      return
+    }
+    setNotice('Account created. Check your email to confirm it, then sign in.')
+    setMode('signin')
+    setLoading(false)
+  }, [mode, name, email, password])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -1239,16 +1305,23 @@ function LoginPage({ onBack }) {
         </button>
       )}
       <div className="w-full max-w-[420px]">
-        <div className="text-center mb-10 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-900 rounded-2xl mb-5 shadow-lg">
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-950 rounded-2xl mb-5 shadow-lg">
             {Ico.logo('w-7 h-7 text-white')}
           </div>
-          <h1 className="text-[22px] font-bold text-black tracking-tight">STEM Research Club</h1>
+          <h1 className="text-[22px] font-bold text-blue-950 tracking-tight">STEM Research Club</h1>
           <p className="text-sm text-gray-400 mt-1">Member Portal · Green Level High School</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-fade-in">
-          <h2 className="text-lg font-semibold text-black mb-6">Sign in to your account</h2>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6">
+            {[['signin', 'Sign In'], ['signup', 'Create Account']].map(([m, label]) => (
+              <button key={m} type="button" onClick={() => switchMode(m)}
+                className={`flex-1 py-2 rounded-md text-sm font-semibold transition ${mode === m ? 'bg-white text-blue-950 shadow-sm' : 'text-gray-500 hover:text-black'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
 
           {error && (
             <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3.5">
@@ -1256,29 +1329,45 @@ function LoginPage({ onBack }) {
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
+          {notice && (
+            <div className="mb-5 flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl p-3.5">
+              {Ico.check('w-4 h-4 text-green-600 mt-0.5 flex-shrink-0')}
+              <p className="text-sm text-green-800">{notice}</p>
+            </div>
+          )}
 
-          <form onSubmit={signIn} className="space-y-4">
+          <form onSubmit={submit} className="space-y-4">
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Full Name</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="First and last name"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
+              </div>
+            )}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@stemrc.org"
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@students.wcpss.net"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••••"
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                placeholder={mode === 'signup' ? 'At least 8 characters' : '••••••••••'}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
             </div>
             <button type="submit" disabled={loading}
               className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-800 transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
-              {loading ? <><Spinner /> Signing in…</> : 'Sign In'}
+              {loading ? <><Spinner /> {mode === 'signin' ? 'Signing in…' : 'Creating account…'}</> : (mode === 'signin' ? 'Sign In' : 'Create Account')}
             </button>
           </form>
 
           <p className="mt-6 text-xs text-gray-400 text-center">
-            Accounts are set up for accepted members each fall. Trouble signing in? Ask an officer at a meeting.
+            {mode === 'signin'
+              ? 'New member? Create an account with your school email.'
+              : 'New accounts join as students. Officers are given admin access by the board.'}
           </p>
         </div>
-        <p className="text-center text-[11px] text-gray-400 mt-6">STEM Research Club · Cary, NC · 2025–2026</p>
+        <p className="text-center text-[11px] text-gray-400 mt-6">STEM Research Club · Green Level High School · Cary, NC</p>
       </div>
     </div>
   )
@@ -1288,7 +1377,7 @@ function LoginPage({ onBack }) {
    SIDEBAR
    ================================================================ */
 
-function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
+function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout, onHome }) {
   const navItems = [
     { id: 'attendance', label: 'Attendance',     iconKey: 'attendance' },
     { id: 'mentor',     label: 'Mentor Sign-Up', iconKey: 'mentor'     },
@@ -1299,27 +1388,27 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
   ]
 
   return (
-    <aside className="w-60 min-h-screen bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
-      <div className="px-5 py-5 border-b border-gray-100">
+    <aside className="w-60 min-h-screen bg-blue-950 flex flex-col flex-shrink-0">
+      <button onClick={onHome} className="px-5 py-5 border-b border-white/10 text-left hover:bg-white/5 transition">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-900 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
             {Ico.logo('w-4 h-4 text-white')}
           </div>
           <div>
-            <p className="text-sm font-bold text-black leading-tight">STEM Research</p>
-            <p className="text-[11px] text-gray-400">Student Portal</p>
+            <p className="text-sm font-bold text-white leading-tight">STEM Research Club</p>
+            <p className="text-[11px] text-blue-300">Member Portal</p>
           </div>
         </div>
-      </div>
+      </button>
 
-      <div className="px-4 py-3.5 border-b border-gray-100">
+      <div className="px-4 py-3.5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-green-700 text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
             {user.initials}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-black truncate">{user.name}</p>
-            <p className="text-[11px] text-gray-400 capitalize">{activeRole} account</p>
+            <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+            <p className="text-[11px] text-blue-300 capitalize">{activeRole} account</p>
           </div>
         </div>
       </div>
@@ -1329,17 +1418,22 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
           const active = activeTab === item.id
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-black'}`}>
-              {Ico[item.iconKey](`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-gray-400'}`)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? 'bg-green-700 text-white' : 'text-blue-200 hover:bg-white/5 hover:text-white'}`}>
+              {Ico[item.iconKey](`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-blue-300'}`)}
               {item.label}
             </button>
           )
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-gray-100">
+      <div className="px-3 py-4 border-t border-white/10 space-y-0.5">
+        <button onClick={onHome}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-blue-200 hover:bg-white/5 hover:text-white transition">
+          {Ico.location('w-4 h-4 flex-shrink-0')}
+          View Homepage
+        </button>
         <button onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-100 hover:text-black transition">
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-blue-200 hover:bg-white/5 hover:text-white transition">
           {Ico.logout('w-4 h-4 flex-shrink-0')}
           Sign Out
         </button>
@@ -2499,7 +2593,7 @@ function RosterTab() {
    ================================================================ */
 
 export default function App() {
-  const [view, setView]           = useState('home')   // 'home' | 'login' (pre-auth views)
+  const [view, setView]           = useState('home')   // 'home' | 'login' | 'portal'
   const [session, setSession]     = useState(null)
   const [user, setUser]           = useState(null)     // profile: { id, email, name, role, initials }
   const [authReady, setAuthReady] = useState(false)
@@ -2528,6 +2622,7 @@ export default function App() {
           initials: initialsOf(data.name),
         })
         setActiveTab('attendance')
+        setView('portal')
       }
     })
     return () => { cancelled = true }
@@ -2560,11 +2655,16 @@ export default function App() {
     return <HomePage onLoginClick={() => setView('login')} />
   }
 
+  // Signed in, but browsing the public site.
+  if (view !== 'portal') {
+    return <HomePage onLoginClick={() => setView('portal')} signedIn />
+  }
+
   const activeRole = user.role
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} activeRole={activeRole} onLogout={logout} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} activeRole={activeRole} onLogout={logout} onHome={() => setView('home')} />
 
       <main className="flex-1 overflow-auto">
         <div className="p-8 pb-24">
