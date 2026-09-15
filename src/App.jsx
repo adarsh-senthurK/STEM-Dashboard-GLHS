@@ -1,121 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { supabase, initialsOf } from './lib/supabase'
 
 /* ================================================================
-   MOCK DATA
+   DISPLAY HELPERS (dates & db → UI status labels)
    ================================================================ */
 
-const DEMO_USERS = {
-  'student@stemrc.org': {
-    password: 'password123', role: 'student',
-    name: 'Jacob Michael', email: 'student@stemrc.org', id: 'u1', initials: 'JM',
-  },
-  'admin@stemrc.org': {
-    password: 'adminsecure2026', role: 'admin',
-    name: 'Dr. Sarah Williams', email: 'admin@stemrc.org', id: 'u2', initials: 'SW',
-  },
+function fmtDate(isoDate) {
+  // "2026-09-15" → "Sep 15, 2026" (parse as local date, not UTC)
+  const [y, m, d] = isoDate.split('T')[0].split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const ACTIVE_CODE = 'RESEARCH2026'
+function fmtTime(isoTimestamp) {
+  return new Date(isoTimestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
 
-const MEETING_DATES = ['Apr 2, 2026', 'Apr 16, 2026', 'Apr 30, 2026', 'May 14, 2026', 'May 21, 2026']
-
-const ROSTER_STUDENTS = [
-  { name: 'Jacob Michael', email: 'student@stemrc.org' },
-  { name: 'Student 1',     email: 'student1@stemrc.org' },
-  { name: 'Student 2',     email: 'student2@stemrc.org' },
-  { name: 'Student 3',     email: 'student3@stemrc.org' },
-  { name: 'Student 4',     email: 'student4@stemrc.org' },
-]
-
-const INITIAL_ATTENDANCE = [
-  { id: 1,  name: 'Jacob Michael', date: 'Apr 2, 2026',  code: 'SPRING01',   time: '3:55 PM' },
-  { id: 2,  name: 'Student 1',     date: 'Apr 2, 2026',  code: 'SPRING01',   time: '3:42 PM' },
-  { id: 3,  name: 'Student 2',     date: 'Apr 2, 2026',  code: 'SPRING01',   time: '3:45 PM' },
-  { id: 4,  name: 'Student 4',     date: 'Apr 2, 2026',  code: 'SPRING01',   time: '3:51 PM' },
-  { id: 5,  name: 'Jacob Michael', date: 'Apr 16, 2026', code: 'SPRING02',   time: '4:01 PM' },
-  { id: 6,  name: 'Student 1',     date: 'Apr 16, 2026', code: 'SPRING02',   time: '4:04 PM' },
-  { id: 7,  name: 'Student 2',     date: 'Apr 16, 2026', code: 'SPRING02',   time: '4:08 PM' },
-  { id: 8,  name: 'Student 3',     date: 'Apr 16, 2026', code: 'SPRING02',   time: '4:12 PM' },
-  { id: 9,  name: 'Student 1',     date: 'Apr 30, 2026', code: 'SPRING03',   time: '3:58 PM' },
-  { id: 10, name: 'Student 3',     date: 'Apr 30, 2026', code: 'SPRING03',   time: '4:00 PM' },
-  { id: 11, name: 'Student 2',     date: 'Apr 30, 2026', code: 'SPRING03',   time: '4:06 PM' },
-  { id: 12, name: 'Jacob Michael', date: 'May 14, 2026', code: 'STEMFAIR25', time: '3:58 PM' },
-  { id: 13, name: 'Student 1',     date: 'May 14, 2026', code: 'STEMFAIR25', time: '4:02 PM' },
-  { id: 14, name: 'Student 2',     date: 'May 14, 2026', code: 'STEMFAIR25', time: '4:07 PM' },
-  { id: 15, name: 'Student 3',     date: 'May 14, 2026', code: 'STEMFAIR25', time: '4:15 PM' },
-  { id: 16, name: 'Student 4',     date: 'May 14, 2026', code: 'STEMFAIR25', time: '4:22 PM' },
-]
-
-const INITIAL_SHIFTS = [
-  {
-    id: 1, date: 'Wed, May 28, 2026', time: '3:30 – 5:00 PM', total: 8, remaining: 5, signedUp: false,
-    roster: [
-      { name: 'Student 1', email: 'student1@stemrc.org' },
-      { name: 'Student 2', email: 'student2@stemrc.org' },
-      { name: 'Student 3', email: 'student3@stemrc.org' },
-    ],
-  },
-  {
-    id: 2, date: 'Wed, Jun 4, 2026', time: '3:30 – 5:00 PM', total: 8, remaining: 2, signedUp: false,
-    roster: [
-      { name: 'Student 4', email: 'student4@stemrc.org' },
-      { name: 'Student 1', email: 'student1@stemrc.org' },
-      { name: 'Student 2', email: 'student2@stemrc.org' },
-      { name: 'Student 3', email: 'student3@stemrc.org' },
-      { name: 'Student 5', email: 'student5@stemrc.org' },
-      { name: 'Student 6', email: 'student6@stemrc.org' },
-    ],
-  },
-  {
-    id: 3, date: 'Wed, Jun 11, 2026', time: '3:30 – 5:00 PM', total: 8, remaining: 0, signedUp: false,
-    roster: [
-      { name: 'Jacob Michael', email: 'student@stemrc.org' },
-      { name: 'Student 1',     email: 'student1@stemrc.org' },
-      { name: 'Student 2',     email: 'student2@stemrc.org' },
-      { name: 'Student 3',     email: 'student3@stemrc.org' },
-      { name: 'Student 4',     email: 'student4@stemrc.org' },
-      { name: 'Student 5',     email: 'student5@stemrc.org' },
-      { name: 'Student 6',     email: 'student6@stemrc.org' },
-      { name: 'Student 7',     email: 'student7@stemrc.org' },
-    ],
-  },
-  {
-    id: 4, date: 'Wed, Jun 18, 2026', time: '3:30 – 5:00 PM', total: 8, remaining: 6, signedUp: false,
-    roster: [
-      { name: 'Student 1', email: 'student1@stemrc.org' },
-      { name: 'Student 3', email: 'student3@stemrc.org' },
-    ],
-  },
-  {
-    id: 5, date: 'Wed, Jun 25, 2026', time: '3:30 – 5:00 PM', total: 8, remaining: 8, signedUp: false,
-    roster: [],
-  },
-]
-
-const INITIAL_TICKETS = [
-  {
-    id: 1, studentName: 'Jacob Michael', studentId: 'u1',
-    subject: 'Question about Form 1A submission deadline',
-    message: 'Hi, I wanted to confirm the deadline for submitting Form 1A. Is it due before the project starts or can I submit it concurrently with early experiments?',
-    status: 'Replied',
-    reply: 'Hi Jacob! Form 1A — along with Adult Sponsor sign-off — must be completed and approved before any experimentation begins. This is an ISEF requirement. Please have your sponsor review and sign it first, then upload it here. Let us know if you have any other questions!',
-    date: 'May 18, 2026', time: '2:34 PM',
-  },
-  {
-    id: 2, studentName: 'Jacob Michael', studentId: 'u1',
-    subject: 'NCSEF registration portal returning 404 error',
-    message: "The registration link on the NCSEF website keeps giving me a 404 error. I've tried two different browsers. Can you send the correct link or register me manually?",
-    status: 'Unanswered', reply: null,
-    date: 'May 20, 2026', time: '10:15 AM',
-  },
-  {
-    id: 3, studentName: 'Student 1', studentId: 'u3',
-    subject: 'Switching project category — still possible?',
-    message: "I originally registered under Behavioral and Social Sciences but my project has evolved toward Computational Biology. Is it too late to switch categories, and would it affect my existing form approvals?",
-    status: 'Unanswered', reply: null,
-    date: 'May 21, 2026', time: '9:02 AM',
-  },
-]
+const DOC_STATUS_LABELS = { pending: 'Pending Review', approved: 'Approved', denied: 'Changes Requested' }
+const TICKET_STATUS_LABELS = { open: 'Unanswered', answered: 'Replied', closed: 'Replied' }
 
 const MOCK_DOC_PREVIEWS = {
   'JacobMichaelNCSEFParentReleaseForm.pdf': `NORTH CAROLINA SCIENCE AND ENGINEERING FAIR
@@ -501,14 +402,6 @@ const WIZARD_QUESTIONS = [
   },
 ]
 
-const INITIAL_DOCUMENTS = [
-  { id: 1, student: 'Jacob Michael', type: 'NCSEF Parent Release',             file: 'JacobMichaelNCSEFParentReleaseForm.pdf',              pdfSrc: '/pdfs/JacobMichaelNCSEFParentReleaseForm.pdf',              size: '106 KB', status: 'Pending Review', feedback: null, date: 'May 19, 2026', studentId: 'u1' },
-  { id: 2, student: 'Jacob Michael', type: 'Form 1 — Adult Sponsor Checklist', file: '1-Checklist-for-Adult-Sponsor-stemrcform1.pdf',         pdfSrc: '/pdfs/1-Checklist-for-Adult-Sponsor-stemrcform1.pdf',         size: '402 KB', status: 'Pending Review', feedback: null, date: 'May 19, 2026', studentId: 'u1' },
-  { id: 3, student: 'Jacob Michael', type: 'Form 1A — Student Checklist',      file: '1A-Student-Checklist-Research-Plan-Instructions1.pdf', pdfSrc: '/pdfs/1A-Student-Checklist-Research-Plan-Instructions1.pdf', size: '151 KB', status: 'Pending Review', feedback: null, date: 'May 19, 2026', studentId: 'u1' },
-  { id: 4, student: 'Jacob Michael', type: 'Form 4 — Informed Consent',        file: '4-Sample-Informed-Consent1.pdf',                       pdfSrc: '/pdfs/4-Sample-Informed-Consent1.pdf',                       size: '195 KB', status: 'Pending Review', feedback: null, date: 'May 19, 2026', studentId: 'u1' },
-  { id: 5, student: 'Jacob Michael', type: 'Form 4 — Human Participants',      file: '4-Human-Participants3.pdf',                            pdfSrc: '/pdfs/4-Human-Participants3.pdf',                            size: '307 KB', status: 'Pending Review', feedback: null, date: 'May 19, 2026', studentId: 'u1' },
-]
-
 /* ================================================================
    UTILITIES
    ================================================================ */
@@ -833,7 +726,7 @@ function DocViewerModal({ doc, onClose }) {
           {canPreview && (
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-xl text-xs font-semibold hover:bg-gray-800 transition flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 text-white rounded-xl text-xs font-semibold hover:bg-green-800 transition flex-shrink-0"
             >
               {Ico.download('w-3.5 h-3.5')} Download PDF
             </button>
@@ -872,44 +765,347 @@ function DocViewerModal({ doc, onClose }) {
 }
 
 /* ================================================================
+   PUBLIC HOMEPAGE
+   ================================================================ */
+
+const BOARD_MEMBERS = [
+  { role: 'President',       name: 'Andreas Hoimes',   email: 'aphoimes@students.wcpss.net' },
+  { role: 'Vice President',  name: 'Jacob Michael',    email: 'jsmichael@students.wcpss.net' },
+  { role: 'Director of Competition', name: 'Nehala Chandolu', email: 'nchandolu@students.wcpss.net' },
+  { role: 'Director of Research',    name: 'Saumit Rampalli', email: 'srampalli@students.wcpss.net' },
+  { role: 'Director of Research Integrity & School Connections', name: 'Adarsh Senthurkumaran', email: 'asenthurkumaran@students.wcpss.net' },
+  { role: 'Director of Outreach & Community Service', name: 'Maithili Kodali',        email: 'mkodali2@students.wcpss.net' },
+  { role: 'Director of Outreach & Community Service', name: 'Vivek Chandra Chintala', email: 'vchintala@students.wcpss.net' },
+  { role: 'Director of Outreach & Community Service', name: 'Sribala Arunachalam',    email: 'sarunachalam@students.wcpss.net' },
+  { role: 'Director of Organization & Publicity', name: 'Myra Bhagat', email: 'mbhagat@students.wcpss.net' },
+  { role: 'Director of Organization & Publicity', name: 'Gio Sayde',   email: 'gsayde@students.wcpss.net' },
+]
+
+const ADVISORS = [
+  { role: 'Faculty Advisor', name: '[Advisor Name]', email: 'advisor@wcpss.net' },
+]
+
+const HOME_PROGRAMS = [
+  { title: 'Meeting presentations', desc: 'At each meeting an officer presents one part of the research process: forming a question, reviewing literature, designing an experiment, analyzing data, writing it up. Slides stay available to members afterward.' },
+  { title: 'Project mentorship', desc: 'Members can work with a mentor experienced in their field, and first-time researchers are paired with members who have been through a competition season already.' },
+  { title: 'Research paperwork help', desc: 'Science fair projects require regulatory forms, and some categories (human subjects, vertebrate animals, biohazards) require approval before you start. The club walks you through which forms apply and reviews them before submission.' },
+  { title: 'Summer program listings', desc: 'We keep a running list of research internships and university summer programs open to high schoolers, with deadlines.' },
+]
+
+const HOME_COMPETITIONS = [
+  { name: 'NCSEF', full: 'North Carolina Science and Engineering Fair', when: 'February and March', detail: 'Our region is 3A. Projects that place at regionals advance to the state fair in Raleigh, and top state finishers can qualify for the international fair (ISEF).' },
+  { name: 'NCSAS', full: 'North Carolina Student Academy of Science', when: 'March', detail: 'A paper-and-presentation format: you submit a written paper and defend it in a talk before judges.' },
+  { name: 'Regeneron STS', full: 'Regeneron Science Talent Search', when: 'Application due in the fall', detail: 'A national, paper-based competition for seniors with an original research project.' },
+]
+
+function MediaPlaceholder({ label = 'Photo coming soon', className = '' }) {
+  return (
+    <div className={`relative overflow-hidden rounded-xl border border-gray-200 bg-gray-100 flex flex-col items-center justify-center gap-2 ${className}`}>
+      <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      {label && <p className="text-xs text-gray-400">{label}</p>}
+    </div>
+  )
+}
+
+function HomePage({ onLoginClick }) {
+  const navLinks = [
+    { href: '#about',        label: 'About' },
+    { href: '#projects',     label: 'Projects & Service' },
+    { href: '#journal',      label: 'Journal' },
+    { href: '#competitions', label: 'Competitions' },
+    { href: '#officers',     label: 'Officers' },
+    { href: '#contact',      label: 'Contact' },
+  ]
+
+  return (
+    <div className="min-h-screen bg-white text-black antialiased">
+      {/* ---------- NAV ---------- */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between gap-4">
+          <a href="#top" className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              {Ico.logo('w-4 h-4 text-white')}
+            </div>
+            <p className="text-sm font-bold tracking-tight truncate">STEM Research Club</p>
+          </a>
+          <nav className="hidden md:flex items-center gap-6">
+            {navLinks.map(l => (
+              <a key={l.href} href={l.href}
+                className="text-sm text-gray-600 hover:text-black transition">
+                {l.label}
+              </a>
+            ))}
+          </nav>
+          <button onClick={onLoginClick}
+            className="bg-green-700 text-white px-3.5 py-1.5 rounded-md text-sm font-medium hover:bg-green-800 transition flex-shrink-0">
+            Member Login
+          </button>
+        </div>
+      </header>
+
+      {/* ---------- HERO ---------- */}
+      <section id="top">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-10 sm:pb-12">
+          <h1 className="text-3xl sm:text-4xl font-bold leading-tight max-w-3xl text-blue-950">
+            Student research at Green Level High School
+          </h1>
+          <p className="mt-5 text-base text-gray-600 leading-relaxed max-w-2xl">
+            STEMRC members design and run their own research projects and inventions, on
+            almost any topic, and enter them in North Carolina's science fairs. Meetings are
+            every other week. No prior research experience is expected.
+          </p>
+          <MediaPlaceholder label="Club photo coming soon" className="mt-10 aspect-[21/9]" />
+        </div>
+      </section>
+
+      {/* ---------- ABOUT ---------- */}
+      <section id="about" className="scroll-mt-4 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-16">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-950">About the club</h2>
+            <p className="mt-5 text-gray-600 leading-relaxed">
+              Science fair research has a lot of moving parts: picking a question worth asking,
+              designing an experiment, getting regulatory approval for certain project types,
+              collecting and analyzing data, and presenting to judges. Meetings cover one of
+              these at a time, so a member who starts in the fall has walked through the whole
+              process by the time regional fairs arrive in February.
+            </p>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              Projects come from every discipline. Recent seasons have included machine
+              learning models, engineered devices, and behavioral studies. The club is open to
+              all grades, and members who finish a project can publish a write-up in the
+              Green Level Journal at the end of the year.
+            </p>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              The time commitment is around 45 minutes a week outside of meetings. Deadlines
+              are flexible; what matters is steady progress on your project over the year and
+              running it ethically.
+            </p>
+          </div>
+          <MediaPlaceholder label="Meeting photo" className="aspect-[4/3] lg:aspect-auto lg:min-h-full" />
+        </div>
+      </section>
+
+      {/* ---------- ACTIVITIES ---------- */}
+      <section id="activities" className="scroll-mt-4 border-t border-gray-200 bg-green-50/50">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">What the club does</h2>
+          <div className="mt-8 divide-y divide-gray-200 border-t border-b border-gray-200">
+            {HOME_PROGRAMS.map(p => (
+              <div key={p.title} className="py-6 grid sm:grid-cols-[220px_1fr] gap-2 sm:gap-8">
+                <h3 className="text-[15px] font-semibold">{p.title}</h3>
+                <p className="text-[15px] text-gray-600 leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- PROJECTS & SERVICE ---------- */}
+      <section id="projects" className="scroll-mt-4 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Projects &amp; service</h2>
+          <div className="mt-6 grid lg:grid-cols-2 gap-10 lg:gap-16">
+            <div>
+              <h3 className="text-lg font-semibold">Member projects</h3>
+              <p className="mt-3 text-gray-600 leading-relaxed">
+                Research is done independently or with a group of peers in the club, on a topic
+                you pick. Many members use their project to explore a field they are considering
+                for college or a career. Projects can be entered in competitions, published in
+                the journal, or simply finished for their own sake.
+              </p>
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <MediaPlaceholder label="Project photo" className="aspect-[4/3]" />
+                <MediaPlaceholder label="Project photo" className="aspect-[4/3]" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Outreach and community service</h3>
+              <p className="mt-3 text-gray-600 leading-relaxed">
+                The club also runs outreach and service events in the school and the wider
+                community, organized by our three Directors of Outreach &amp; Community Service.
+                Details for the current year's events are announced at meetings and on Instagram.
+              </p>
+              <MediaPlaceholder label="Service event photo" className="mt-6 aspect-[16/7]" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- GREEN LEVEL JOURNAL ---------- */}
+      <section id="journal" className="scroll-mt-4 border-t border-gray-200 bg-green-50/50">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-16 items-start">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-950">The Green Level Journal</h2>
+            <p className="mt-5 text-gray-600 leading-relaxed">
+              The club publishes a school research journal at the end of each year, containing
+              members' thesis papers and research projects. Publishing is open to any member
+              with completed work; your project does not have to have competed anywhere to be
+              included.
+            </p>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              The journal is edited and produced by students. If you want to be involved on the
+              editing side rather than as an author, talk to the Director of Research at a meeting.
+            </p>
+          </div>
+          <MediaPlaceholder label="Journal cover" className="aspect-[3/4] max-w-[280px]" />
+        </div>
+      </section>
+
+      {/* ---------- COMPETITIONS ---------- */}
+      <section id="competitions" className="scroll-mt-4 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Where we compete</h2>
+          <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
+            Exact dates change each year and are announced at fall meetings.
+          </p>
+          <div className="mt-8 space-y-8">
+            {HOME_COMPETITIONS.map(c => (
+              <div key={c.name} className="grid sm:grid-cols-[220px_1fr] gap-2 sm:gap-8">
+                <div>
+                  <h3 className="text-[15px] font-semibold">{c.name}</h3>
+                  <p className="text-sm text-gray-400 mt-0.5">{c.when}</p>
+                </div>
+                <div>
+                  <p className="text-[15px] text-gray-600 leading-relaxed">
+                    <span className="text-blue-950 font-medium">{c.full}.</span> {c.detail}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- MEMBER PORTAL ---------- */}
+      <section className="border-t border-gray-200 bg-green-50/50">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-16 items-start">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-950">The member portal</h2>
+            <p className="mt-5 text-gray-600 leading-relaxed">
+              Members use the portal to check in at meetings, sign up for mentor and volunteer
+              shifts, and file questions for the board. It also holds the club's ISEF paperwork
+              tools: a short questionnaire that tells you which of the 18 official regulatory
+              forms your project needs, the forms themselves as downloadable PDFs, and an upload
+              area where officers review submitted documents.
+            </p>
+            <button onClick={onLoginClick}
+              className="mt-6 bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition">
+              Sign in
+            </button>
+            <p className="mt-3 text-sm text-gray-400">Accounts are created for members at the start of the year.</p>
+          </div>
+          <MediaPlaceholder label="Portal screenshot" className="aspect-[4/3]" />
+        </div>
+      </section>
+
+      {/* ---------- OFFICERS ---------- */}
+      <section id="officers" className="scroll-mt-4 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Officers and advisor</h2>
+          <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
+            Our 2026–27 roster is coming soon. The board below is from the 2025–26 school year.
+          </p>
+          <div className="mt-8 divide-y divide-gray-200 border-t border-b border-gray-200">
+            {[...BOARD_MEMBERS, ...ADVISORS].map(m => (
+              <div key={m.email} className="py-5 flex items-center gap-5">
+                <MediaPlaceholder label="" className="w-12 h-12 !rounded-full flex-shrink-0" />
+                <div className="grid sm:grid-cols-[220px_1fr] gap-1 sm:gap-8 flex-1 min-w-0 items-center">
+                  <div>
+                    <p className="text-[15px] font-semibold">{m.name}</p>
+                    <p className="text-sm text-gray-500">{m.role}</p>
+                  </div>
+                  <a href={`mailto:${m.email}`} className="text-sm text-gray-500 underline decoration-gray-300 underline-offset-2 hover:text-black transition truncate">
+                    {m.email}
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- CONTACT ---------- */}
+      <section id="contact" className="scroll-mt-4 border-t border-gray-200 bg-green-50/50">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Contact</h2>
+          <div className="mt-6 max-w-2xl space-y-4 text-gray-600 leading-relaxed">
+            <p>
+              Membership is by application. The application opens at the start of the school
+              year and is announced in the school's daily announcements and on Instagram at{' '}
+              <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer" className="text-green-700 underline decoration-green-300 underline-offset-2 hover:decoration-green-700 transition">@glstemrc</a>. Accepted members receive meeting details and a portal account.
+            </p>
+            <p>
+              Questions about applying go to Jacob Michael,{' '}
+              <a href="mailto:jsmichael@students.wcpss.net" className="text-green-700 underline decoration-green-300 underline-offset-2 hover:decoration-green-700 transition">jsmichael@students.wcpss.net</a>,
+              or any officer listed above. Green Level High School, Cary, North Carolina.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- FOOTER ---------- */}
+      <footer className="border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-400">STEM Research Club, Green Level High School</p>
+            <p className="text-xs text-gray-400 mt-1">Site built and maintained by club members.</p>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-gray-400">
+            <a href="#about" className="hover:text-black transition">About</a>
+            <a href="#competitions" className="hover:text-black transition">Competitions</a>
+            <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer" className="hover:text-black transition">Instagram</a>
+            <button onClick={onLoginClick} className="hover:text-black transition">Member Login</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
+/* ================================================================
    LOGIN PAGE
    ================================================================ */
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onBack }) {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
 
-  const signIn = useCallback(async (e, overEmail, overPass) => {
+  const signIn = useCallback(async (e) => {
     if (e) e.preventDefault()
-    const em = overEmail ?? email
-    const pw = overPass  ?? password
     setLoading(true); setError('')
-    await new Promise(r => setTimeout(r, 700))
-    const user = DEMO_USERS[em]
-    if (user && user.password === pw) { onLogin({ email: em, ...user }) }
-    else { setError('Invalid credentials. Use the quick-fill buttons below.') }
-    setLoading(false)
-  }, [email, password, onLogin])
-
-  const quickFill = async (type) => {
-    const c = type === 'student'
-      ? { email: 'student@stemrc.org', password: 'password123' }
-      : { email: 'admin@stemrc.org',   password: 'adminsecure2026' }
-    setEmail(c.email); setPassword(c.password); setError('')
-    await signIn(null, c.email, c.password)
-  }
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError(authError.message === 'Invalid login credentials'
+        ? 'Incorrect email or password.'
+        : authError.message)
+      setLoading(false)
+    }
+    // On success the auth listener in App switches to the portal.
+  }, [email, password])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      {onBack && (
+        <button onClick={onBack}
+          className="fixed top-5 left-5 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-black transition px-3 py-2 rounded-xl hover:bg-gray-100">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+          </svg>
+          Back to homepage
+        </button>
+      )}
       <div className="w-full max-w-[420px]">
         <div className="text-center mb-10 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-black rounded-2xl mb-5 shadow-lg">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-900 rounded-2xl mb-5 shadow-lg">
             {Ico.logo('w-7 h-7 text-white')}
           </div>
           <h1 className="text-[22px] font-bold text-black tracking-tight">STEM Research Club</h1>
-          <p className="text-sm text-gray-400 mt-1">Student Portal · Demo v1.0</p>
+          <p className="text-sm text-gray-400 mt-1">Member Portal · Green Level High School</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-fade-in">
@@ -926,33 +1122,22 @@ function LoginPage({ onLogin }) {
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Email Address</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@stemrc.org"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition" required />
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Password</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••••"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition" required />
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
             </div>
             <button type="submit" disabled={loading}
-              className="w-full bg-black text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
+              className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-800 transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
               {loading ? <><Spinner /> Signing in…</> : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-7 pt-6 border-t border-gray-100">
-            <p className="text-[11px] font-bold text-gray-400 text-center uppercase tracking-widest mb-3">Demo Quick Access</p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {[{ type: 'student', label: 'Student', sub: 'student@stemrc.org', emoji: '🎓' },
-                { type: 'admin',   label: 'Admin',   sub: 'admin@stemrc.org',   emoji: '🔑' }].map(({ type, label, sub, emoji }) => (
-                <button key={type} onClick={() => quickFill(type)} disabled={loading}
-                  className="flex flex-col items-center gap-0.5 px-3 py-3.5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition disabled:opacity-50">
-                  <span className="text-xl mb-0.5">{emoji}</span>
-                  <span className="text-xs font-bold text-black">{label}</span>
-                  <span className="text-[11px] text-gray-400">{sub}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="mt-6 text-xs text-gray-400 text-center">
+            Accounts are set up for accepted members each fall. Trouble signing in? Ask an officer at a meeting.
+          </p>
         </div>
         <p className="text-center text-[11px] text-gray-400 mt-6">STEM Research Club · Cary, NC · 2025–2026</p>
       </div>
@@ -978,7 +1163,7 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
     <aside className="w-60 min-h-screen bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-black rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-blue-900 rounded-xl flex items-center justify-center flex-shrink-0">
             {Ico.logo('w-4 h-4 text-white')}
           </div>
           <div>
@@ -990,7 +1175,7 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
 
       <div className="px-4 py-3.5 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
             {user.initials}
           </div>
           <div className="min-w-0">
@@ -1005,7 +1190,7 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
           const active = activeTab === item.id
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-black'}`}>
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-black'}`}>
               {Ico[item.iconKey](`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-gray-400'}`)}
               {item.label}
             </button>
@@ -1028,35 +1213,61 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout }) {
    TAB 1 — ATTENDANCE
    ================================================================ */
 
-function AttendanceTab({ logs, onAddLog, user }) {
+function AttendanceTab({ user }) {
   const today    = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const todayISO = new Date().toISOString().split('T')[0]
 
-  const [code, setCode]     = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]   = useState('')
-  const [toast, setToast]   = useState(null)
+  const [code, setCode]         = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+  const [toast, setToast]       = useState(null)
+  const [myLogs, setMyLogs]     = useState([])
+  const [todayCode, setTodayCode] = useState('')   // admin: current code for today
+  const [savingCode, setSavingCode] = useState(false)
 
-  const myLogs = logs.filter(l => l.name === user.name)
+  const fetchLogs = useCallback(async () => {
+    const { data } = await supabase
+      .from('attendance_logs')
+      .select('id, date, created_at')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+    setMyLogs(data ?? [])
+  }, [user.id])
+
+  useEffect(() => { fetchLogs() }, [fetchLogs])
+
+  useEffect(() => {
+    if (user.role !== 'admin') return
+    supabase.from('attendance_codes').select('code').eq('date', todayISO).maybeSingle()
+      .then(({ data }) => { if (data) setTodayCode(data.code) })
+  }, [user.role, todayISO])
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
-    await new Promise(r => setTimeout(r, 1100))
-    if (code.trim().toUpperCase() === ACTIVE_CODE) {
-      const now = new Date()
-      onAddLog({
-        id:   Date.now(),
-        name: user.name,
-        date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        code: ACTIVE_CODE,
-        time: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-      })
+    const { data, error: rpcError } = await supabase.rpc('log_attendance', { p_code: code.trim() })
+    if (rpcError) {
+      setError('Something went wrong. Try again, or ask an officer.')
+    } else if (!data.ok) {
+      setError(data.error)
+    } else {
       setToast({ message: 'Attendance logged successfully!', type: 'success' })
       setCode('')
-    } else {
-      setError('Incorrect code. Check with your meeting organizer, or use the demo code shown above.')
+      fetchLogs()
     }
     setLoading(false)
+  }
+
+  const saveTodayCode = async (e) => {
+    e.preventDefault()
+    if (!todayCode.trim()) return
+    setSavingCode(true)
+    const { error: upsertError } = await supabase
+      .from('attendance_codes')
+      .upsert({ date: todayISO, code: todayCode.trim().toUpperCase(), created_by: user.id })
+    setToast(upsertError
+      ? { message: 'Could not save the code.', type: 'error' }
+      : { message: `Today's code is set to ${todayCode.trim().toUpperCase()}.`, type: 'success' })
+    setSavingCode(false)
   }
 
   return (
@@ -1068,13 +1279,26 @@ function AttendanceTab({ logs, onAddLog, user }) {
         <p className="text-sm text-gray-500 mt-1">Log your presence for today's club meeting</p>
       </div>
 
+      {user.role === 'admin' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-5">
+          <h3 className="text-sm font-semibold text-black">Today's Attendance Code</h3>
+          <p className="text-xs text-gray-400 mt-1 mb-4">Set the code for {today}, then write it on the board. Students check in with it below.</p>
+          <form onSubmit={saveTodayCode} className="flex gap-2.5">
+            <input type="text" value={todayCode} onChange={e => setTodayCode(e.target.value.toUpperCase())}
+              placeholder="e.g. GATORS0915"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black font-mono tracking-widest placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition uppercase" />
+            <button type="submit" disabled={savingCode || !todayCode.trim()}
+              className="px-5 py-2.5 rounded-xl bg-green-700 text-white text-sm font-semibold hover:bg-green-800 transition disabled:opacity-50">
+              {savingCode ? 'Saving…' : 'Set Code'}
+            </button>
+          </form>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-5">
-        <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
+        <div className="mb-5">
           <h3 className="text-sm font-semibold text-black">Submit Attendance</h3>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs font-medium text-amber-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            Demo tip — today's code:&nbsp;<strong>RESEARCH2026</strong>
-          </span>
+          <p className="text-xs text-gray-400 mt-1">Today's code is written on the board at the meeting.</p>
         </div>
 
         {error && (
@@ -1103,10 +1327,10 @@ function AttendanceTab({ logs, onAddLog, user }) {
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Attendance Code</label>
             <input type="text" value={code} onChange={e => setCode(e.target.value.toUpperCase())}
               placeholder="Enter the code from today's meeting"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black font-mono tracking-widest placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition uppercase" required />
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black font-mono tracking-widest placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition uppercase" required />
           </div>
           <button type="submit" disabled={loading}
-            className="w-full bg-black text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+            className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
             {loading ? <><Spinner /> Verifying code…</> : 'Log Attendance'}
           </button>
         </form>
@@ -1123,17 +1347,16 @@ function AttendanceTab({ logs, onAddLog, user }) {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                {['Date', 'Code', 'Time'].map(h => (
+                {['Date', 'Checked In At'].map(h => (
                   <th key={h} className="px-6 py-2.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {[...myLogs].reverse().map(log => (
+              {myLogs.map(log => (
                 <tr key={log.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-3 text-sm font-medium text-black">{log.date}</td>
-                  <td className="px-6 py-3"><span className="font-mono text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-lg">{log.code}</span></td>
-                  <td className="px-6 py-3 text-sm text-gray-400">{log.time || '—'}</td>
+                  <td className="px-6 py-3 text-sm font-medium text-black">{fmtDate(log.date)}</td>
+                  <td className="px-6 py-3 text-sm text-gray-400">{fmtTime(log.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1149,133 +1372,178 @@ function AttendanceTab({ logs, onAddLog, user }) {
    ================================================================ */
 
 function MentorTab({ activeRole, user }) {
-  const [shifts, setShifts]       = useState(INITIAL_SHIFTS)
-  const [confirmId, setConfirmId] = useState(null)
+  const [shifts, setShifts]         = useState([])
+  const [confirmId, setConfirmId]   = useState(null)
   const [expandedId, setExpandedId] = useState(null)
-  const [toast, setToast]         = useState(null)
+  const [toast, setToast]           = useState(null)
+  const [showAdd, setShowAdd]       = useState(false)
+  const [newShift, setNewShift]     = useState({ title: 'Mentoring shift', date: '', start_time: '3:30 PM', end_time: '5:00 PM', location: '', capacity: 8 })
+
+  const fetchShifts = useCallback(async () => {
+    const { data } = await supabase
+      .from('shifts')
+      .select('*, shift_signups(id, user_id, profiles(name, email))')
+      .order('date', { ascending: true })
+    setShifts(data ?? [])
+  }, [])
+
+  useEffect(() => { fetchShifts() }, [fetchShifts])
 
   const confirmShift = shifts.find(s => s.id === confirmId)
 
-  const handleConfirm = () => {
-    setShifts(prev => prev.map(s => s.id === confirmId
-      ? { ...s, remaining: s.remaining - 1, signedUp: true,
-          roster: [...s.roster, { name: user.name, email: user.email }] }
-      : s
-    ))
+  const handleConfirm = async () => {
+    const { error } = await supabase.from('shift_signups').insert({ shift_id: confirmId, user_id: user.id })
     setConfirmId(null)
-    setToast({ message: "You're signed up! See you there.", type: 'success' })
+    if (error) {
+      const msg = error.message.includes('full') ? 'This shift is full.'
+        : error.code === '23505' ? "You're already signed up for this shift."
+        : 'Could not sign you up. Try again.'
+      setToast({ message: msg, type: 'error' })
+    } else {
+      setToast({ message: "You're signed up! See you there.", type: 'success' })
+    }
+    fetchShifts()
   }
 
-  const removeFromRoster = (shiftId, memberEmail) => {
-    setShifts(prev => prev.map(s => {
-      if (s.id !== shiftId) return s
-      const wasSelf = memberEmail === user.email
-      return {
-        ...s,
-        remaining: Math.min(s.remaining + 1, s.total),
-        signedUp: wasSelf ? false : s.signedUp,
-        roster: s.roster.filter(r => r.email !== memberEmail),
-      }
-    }))
-    setToast({ message: 'Member removed from shift.', type: 'info' })
+  const removeSignup = async (signupId, wasSelf) => {
+    await supabase.from('shift_signups').delete().eq('id', signupId)
+    setToast({ message: wasSelf ? 'Your sign-up was cancelled.' : 'Member removed from shift.', type: 'info' })
+    fetchShifts()
+  }
+
+  const createShift = async (e) => {
+    e.preventDefault()
+    if (!newShift.date || !newShift.title.trim()) return
+    const { error } = await supabase.from('shifts').insert({ ...newShift, capacity: Number(newShift.capacity) || 1 })
+    if (error) {
+      setToast({ message: 'Could not create the shift.', type: 'error' })
+    } else {
+      setToast({ message: 'Shift added.', type: 'success' })
+      setShowAdd(false)
+      setNewShift(prev => ({ ...prev, date: '' }))
+      fetchShifts()
+    }
+  }
+
+  const deleteShift = async (id) => {
+    await supabase.from('shifts').delete().eq('id', id)
+    setToast({ message: 'Shift deleted.', type: 'info' })
+    fetchShifts()
   }
 
   return (
     <div className="max-w-3xl animate-fade-in">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
-      <div className="mb-7">
-        <h2 className="text-2xl font-bold text-black">Mentor Sign-Up</h2>
-        <p className="text-sm text-gray-500 mt-1">Volunteer mentoring shifts at Mills Park Middle School</p>
-      </div>
-
-      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-5 flex items-start gap-3.5">
-        <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center flex-shrink-0">
-          {Ico.location('w-4 h-4 text-white')}
-        </div>
+      <div className="mb-7 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-sm font-semibold text-black">Mills Park Middle School — Science Lab, Rm 214</p>
-          <p className="text-xs text-gray-500 mt-0.5">1100 Mills Park Dr, Cary, NC 27519</p>
-          <p className="text-xs text-gray-400 mt-1">Contact: Aticia Mormando · <span className="font-mono">amormando@wcpss.net</span></p>
+          <h2 className="text-2xl font-bold text-black">Mentor Sign-Up</h2>
+          <p className="text-sm text-gray-500 mt-1">Volunteer for mentoring and outreach shifts</p>
         </div>
+        {activeRole === 'admin' && (
+          <button onClick={() => setShowAdd(true)}
+            className="px-4 py-2.5 bg-green-700 text-white rounded-xl text-sm font-semibold hover:bg-green-800 transition">
+            + Add Shift
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-black">Available Shifts</h3>
         </div>
+        {shifts.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-400">
+            No shifts posted yet{activeRole === 'admin' ? ' — add one above.' : '. Check back after the next meeting.'}
+          </div>
+        ) : (
         <div className="divide-y divide-gray-100">
           {shifts.map(shift => {
-            const pct = ((shift.total - shift.remaining) / shift.total) * 100
+            const signups   = shift.shift_signups ?? []
+            const taken     = signups.length
+            const remaining = Math.max(shift.capacity - taken, 0)
+            const signedUp  = signups.some(su => su.user_id === user.id)
+            const pct       = (taken / shift.capacity) * 100
             const rosterOpen = expandedId === shift.id
 
             return (
               <div key={shift.id}>
                 <div className="flex items-center gap-4 px-6 py-4 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-black">{shift.date}</p>
-                    <p className="text-xs text-gray-500">{shift.time}</p>
+                    <p className="text-sm font-medium text-black">{shift.title} · {fmtDate(shift.date)}</p>
+                    <p className="text-xs text-gray-500">{shift.start_time} – {shift.end_time}{shift.location ? ` · ${shift.location}` : ''}</p>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: shift.remaining === 0 ? '#ef4444' : '#000' }} />
+                        style={{ width: `${pct}%`, backgroundColor: remaining === 0 ? '#ef4444' : '#15803d' }} />
                     </div>
-                    <span className={`text-xs font-medium ${shift.remaining === 0 ? 'text-red-500' : 'text-gray-600'}`}>
-                      {shift.remaining}/{shift.total}
+                    <span className={`text-xs font-medium ${remaining === 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                      {remaining}/{shift.capacity}
                     </span>
                   </div>
 
-                  {shift.signedUp ? (
+                  {signedUp ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
                       {Ico.check('w-3 h-3')} Signed Up
                     </span>
-                  ) : shift.remaining === 0 ? (
+                  ) : remaining === 0 ? (
                     <span className="inline-flex items-center px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-medium">Full</span>
                   ) : (
                     <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-full text-xs font-medium">Open</span>
                   )}
 
-                  {shift.signedUp || shift.remaining === 0 ? (
+                  {signedUp ? (
+                    <button onClick={() => removeSignup(signups.find(su => su.user_id === user.id)?.id, true)}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-black transition">
+                      Cancel
+                    </button>
+                  ) : remaining === 0 ? (
                     <button disabled className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 text-gray-400 cursor-not-allowed">
-                      {shift.signedUp ? 'Signed Up' : 'Full'}
+                      Full
                     </button>
                   ) : (
                     <button onClick={() => setConfirmId(shift.id)}
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-black text-white hover:bg-gray-800 transition">
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-green-700 text-white hover:bg-green-800 transition">
                       Sign Up
                     </button>
                   )}
 
                   {activeRole === 'admin' && (
-                    <button
-                      onClick={() => setExpandedId(rosterOpen ? null : shift.id)}
-                      className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-black transition px-2 py-1 border border-gray-200 rounded-xl hover:border-gray-400">
-                      Roster ({shift.roster.length})
-                      {Ico.chevronDown(`w-3.5 h-3.5 transition-transform ${rosterOpen ? 'rotate-180' : ''}`)}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setExpandedId(rosterOpen ? null : shift.id)}
+                        className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-black transition px-2 py-1 border border-gray-200 rounded-xl hover:border-gray-400">
+                        Roster ({taken})
+                        {Ico.chevronDown(`w-3.5 h-3.5 transition-transform ${rosterOpen ? 'rotate-180' : ''}`)}
+                      </button>
+                      <button onClick={() => deleteShift(shift.id)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition">
+                        Delete
+                      </button>
+                    </>
                   )}
                 </div>
 
                 {activeRole === 'admin' && rosterOpen && (
                   <div className="px-6 pb-4 bg-gray-50 border-t border-gray-100 animate-fade-in">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-3 mb-2">
-                      Signed-Up Volunteers ({shift.roster.length})
+                      Signed-Up Volunteers ({taken})
                     </p>
-                    {shift.roster.length === 0 ? (
+                    {taken === 0 ? (
                       <p className="text-xs text-gray-400 italic">No one signed up yet.</p>
                     ) : (
                       <div className="space-y-1.5">
-                        {shift.roster.map((r, i) => (
-                          <div key={i} className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                              {r.name.charAt(0)}
+                        {signups.map(su => (
+                          <div key={su.id} className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                              {(su.profiles?.name ?? '?').charAt(0)}
                             </div>
-                            <span className="text-sm font-medium text-black">{r.name}</span>
-                            <span className="text-xs text-gray-400 font-mono flex-1">{r.email}</span>
+                            <span className="text-sm font-medium text-black">{su.profiles?.name ?? 'Member'}</span>
+                            <span className="text-xs text-gray-400 font-mono flex-1">{su.profiles?.email ?? ''}</span>
                             <button
-                              onClick={() => removeFromRoster(shift.id, r.email)}
+                              onClick={() => removeSignup(su.id, su.user_id === user.id)}
                               className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition flex-shrink-0">
                               Remove
                             </button>
@@ -1289,21 +1557,68 @@ function MentorTab({ activeRole, user }) {
             )
           })}
         </div>
+        )}
       </div>
 
       {confirmShift && (
         <Modal title="Confirm Sign-Up" onClose={() => setConfirmId(null)}>
           <p className="text-sm text-gray-600 mb-3">You're registering for:</p>
           <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-100">
-            <p className="text-sm font-semibold text-black">{confirmShift.date}</p>
-            <p className="text-sm text-gray-500">{confirmShift.time}</p>
-            <p className="text-xs text-gray-400 mt-1">Mills Park Middle School · Science Lab Rm 214</p>
+            <p className="text-sm font-semibold text-black">{confirmShift.title} · {fmtDate(confirmShift.date)}</p>
+            <p className="text-sm text-gray-500">{confirmShift.start_time} – {confirmShift.end_time}</p>
+            {confirmShift.location && <p className="text-xs text-gray-400 mt-1">{confirmShift.location}</p>}
           </div>
           <p className="text-xs text-gray-400 mb-5">By confirming, you commit to attending this shift. Please cancel at least 48 hours in advance if you cannot make it.</p>
           <div className="flex gap-2.5">
             <button onClick={() => setConfirmId(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-            <button onClick={handleConfirm} className="flex-1 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 transition">Confirm</button>
+            <button onClick={handleConfirm} className="flex-1 py-2.5 rounded-xl bg-green-700 text-white text-sm font-semibold hover:bg-green-800 transition">Confirm</button>
           </div>
+        </Modal>
+      )}
+
+      {showAdd && (
+        <Modal title="Add Shift" onClose={() => setShowAdd(false)}>
+          <form onSubmit={createShift} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Title</label>
+              <input type="text" value={newShift.title} onChange={e => setNewShift(p => ({ ...p, title: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Date</label>
+                <input type="date" value={newShift.date} onChange={e => setNewShift(p => ({ ...p, date: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Capacity</label>
+                <input type="number" min="1" value={newShift.capacity} onChange={e => setNewShift(p => ({ ...p, capacity: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Starts</label>
+                <input type="text" value={newShift.start_time} onChange={e => setNewShift(p => ({ ...p, start_time: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Ends</label>
+                <input type="text" value={newShift.end_time} onChange={e => setNewShift(p => ({ ...p, end_time: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Location (optional)</label>
+              <input type="text" value={newShift.location} onChange={e => setNewShift(p => ({ ...p, location: e.target.value }))}
+                placeholder="e.g. Mills Park MS, Science Lab Rm 214"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" />
+            </div>
+            <button type="submit"
+              className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-800 transition">
+              Add Shift
+            </button>
+          </form>
         </Modal>
       )}
     </div>
@@ -1372,7 +1687,7 @@ function FormsTab() {
             <p className="text-sm font-semibold text-black mb-1">Not sure which forms you need?</p>
             <p className="text-sm text-gray-500 mb-5">Answer a few project-specific questions to get your personalized list.</p>
             <button onClick={() => { setWizardStarted(true); setCurrentQ(0) }}
-              className="px-5 py-2 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition">
+              className="px-5 py-2 bg-green-700 text-white rounded-xl text-sm font-semibold hover:bg-green-800 transition">
               Start Wizard
             </button>
           </div>
@@ -1382,7 +1697,7 @@ function FormsTab() {
           <div className="animate-fade-in">
             <div className="flex gap-1 mb-5">
               {WIZARD_QUESTIONS.map((_, i) => (
-                <div key={i} className={`flex-1 h-1 rounded-full transition-all duration-300 ${i <= currentQ ? 'bg-black' : 'bg-gray-200'}`} />
+                <div key={i} className={`flex-1 h-1 rounded-full transition-all duration-300 ${i <= currentQ ? 'bg-green-700' : 'bg-gray-200'}`} />
               ))}
             </div>
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -1394,9 +1709,9 @@ function FormsTab() {
             )}
             <div className="flex gap-2.5">
               <button onClick={() => answerQ(WIZARD_QUESTIONS[currentQ].id, 'yes')}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-black hover:border-black hover:bg-gray-50 transition">Yes</button>
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-black hover:border-green-700 hover:bg-gray-50 transition">Yes</button>
               <button onClick={() => answerQ(WIZARD_QUESTIONS[currentQ].id, 'no')}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-black hover:border-black hover:bg-gray-50 transition">No</button>
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-black hover:border-green-700 hover:bg-gray-50 transition">No</button>
             </div>
           </div>
         )}
@@ -1413,7 +1728,7 @@ function FormsTab() {
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Required for all projects</p>
               <div className="flex flex-wrap gap-2">
                 {['Form 1', 'Form 1A', 'NCSEF'].map(f => (
-                  <span key={f} className="inline-flex items-center px-3 py-1.5 bg-black text-white rounded-xl text-xs font-semibold">{f}</span>
+                  <span key={f} className="inline-flex items-center px-3 py-1.5 bg-green-700 text-white rounded-xl text-xs font-semibold">{f}</span>
                 ))}
               </div>
             </div>
@@ -1446,7 +1761,7 @@ function FormsTab() {
               <div key={form.id} className={i > 0 ? 'border-t border-gray-100' : ''}>
                 <button className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
                   onClick={() => setExpanded(isExpanded ? null : form.id)}>
-                  <span className="text-[11px] font-bold bg-black text-white px-2 py-1 rounded-lg whitespace-nowrap flex-shrink-0">{form.tag}</span>
+                  <span className="text-[11px] font-bold bg-green-700 text-white px-2 py-1 rounded-lg whitespace-nowrap flex-shrink-0">{form.tag}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-black">{form.title}</span>
@@ -1480,7 +1795,7 @@ function FormsTab() {
                         <ul className="space-y-2">
                           {form.how.map((step, idx) => (
                             <li key={idx} className="flex items-start gap-2">
-                              <span className="w-5 h-5 bg-black text-white rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{idx + 1}</span>
+                              <span className="w-5 h-5 bg-green-700 text-white rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{idx + 1}</span>
                               <span className="text-sm text-gray-700 leading-snug">{step}</span>
                             </li>
                           ))}
@@ -1502,37 +1817,84 @@ function FormsTab() {
    TAB 4 — RESEARCH HUB
    ================================================================ */
 
-function ResearchTab({ activeRole, user, documents, setDocuments }) {
+function ResearchTab({ activeRole, user }) {
   const [dragging, setDragging]     = useState(false)
   const [docType, setDocType]       = useState('Form 1A — Student Checklist')
   const [denyDocId, setDenyDocId]   = useState(null)
   const [denyReason, setDenyReason] = useState('')
   const [viewerDoc, setViewerDoc]   = useState(null)
   const [toast, setToast]           = useState(null)
+  const [documents, setDocuments]   = useState([])
+  const [uploading, setUploading]   = useState(false)
   const fileRef                     = useRef(null)
+
+  const fetchDocs = useCallback(async () => {
+    // RLS scopes this automatically: students get their own rows, admins get all.
+    const { data } = await supabase
+      .from('documents')
+      .select('*, profiles(name)')
+      .order('created_at', { ascending: false })
+    setDocuments((data ?? []).map(d => ({
+      id: d.id,
+      file: d.filename,
+      type: d.doc_type,
+      date: fmtDate(d.created_at),
+      size: d.size_bytes
+        ? (d.size_bytes > 1024 * 1024 ? `${(d.size_bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.size_bytes / 1024)} KB`)
+        : '',
+      status: DOC_STATUS_LABELS[d.status] ?? d.status,
+      feedback: d.feedback,
+      student: d.profiles?.name ?? '',
+      studentId: d.user_id,
+      storagePath: d.storage_path,
+    })))
+  }, [])
+
+  useEffect(() => { fetchDocs() }, [fetchDocs])
 
   const myDocs = documents.filter(d => d.studentId === user.id)
 
-  const addDoc = (file) => {
-    setDocuments(prev => [{
-      id: Date.now(), student: user.name, type: docType, file: file.name,
-      fileObj: file,
-      size: file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`,
-      status: 'Pending Review', feedback: null,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      studentId: user.id,
-    }, ...prev])
-    setToast({ message: `${file.name} uploaded — pending review.`, type: 'success' })
+  const addDoc = async (file) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ message: 'That file is over the 5 MB limit. Compress it and try again.', type: 'error' })
+      return
+    }
+    setUploading(true)
+    const path = `${user.id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g, '_')}`
+    const { error: uploadError } = await supabase.storage.from('documents').upload(path, file)
+    if (uploadError) {
+      setToast({ message: `Upload failed: ${uploadError.message}`, type: 'error' })
+    } else {
+      const { error: insertError } = await supabase.from('documents').insert({
+        user_id: user.id, doc_type: docType, filename: file.name,
+        storage_path: path, size_bytes: file.size,
+      })
+      if (insertError) {
+        setToast({ message: 'Upload saved but could not be recorded. Ask an officer.', type: 'error' })
+      } else {
+        setToast({ message: `${file.name} uploaded — pending review.`, type: 'success' })
+        fetchDocs()
+      }
+    }
+    setUploading(false)
+  }
+
+  const openViewer = async (doc) => {
+    const { data } = await supabase.storage.from('documents').createSignedUrl(doc.storagePath, 3600)
+    setViewerDoc({ ...doc, pdfSrc: data?.signedUrl ?? null })
   }
 
   const handleFiles = (e) => { if (e.target.files[0]) addDoc(e.target.files[0]); e.target.value = '' }
   const handleDrop  = (e) => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files[0]) addDoc(e.dataTransfer.files[0]) }
-  const approve     = (id) => { setDocuments(prev => prev.map(d => d.id === id ? { ...d, status: 'Approved', feedback: null } : d)); setToast({ message: 'Document approved.', type: 'success' }) }
-  const submitDeny  = () => {
+  const approve     = async (id) => {
+    await supabase.from('documents').update({ status: 'approved', feedback: null }).eq('id', id)
+    setToast({ message: 'Document approved.', type: 'success' }); fetchDocs()
+  }
+  const submitDeny  = async () => {
     if (!denyReason.trim()) return
-    setDocuments(prev => prev.map(d => d.id === denyDocId ? { ...d, status: 'Changes Requested', feedback: denyReason.trim() } : d))
+    await supabase.from('documents').update({ status: 'denied', feedback: denyReason.trim() }).eq('id', denyDocId)
     setToast({ message: 'Feedback sent to student.', type: 'info' })
-    setDenyDocId(null); setDenyReason('')
+    setDenyDocId(null); setDenyReason(''); fetchDocs()
   }
 
   const stats = [
@@ -1549,7 +1911,7 @@ function ResearchTab({ activeRole, user, documents, setDocuments }) {
             {Ico.file('w-4 h-4 text-gray-500')}
           </div>
           <div className="min-w-0">
-            <button onClick={() => setViewerDoc(doc)}
+            <button onClick={() => openViewer(doc)}
               className="text-sm font-medium text-black hover:underline underline-offset-2 text-left truncate block max-w-xs">
               {doc.file}
             </button>
@@ -1602,18 +1964,18 @@ function ResearchTab({ activeRole, user, documents, setDocuments }) {
             <div className="flex flex-wrap gap-2 mb-4">
               {['Form 1 — Adult Sponsor', 'Form 1A — Student Checklist', 'Form 4 — Human Participants', 'Form 4 — Informed Consent', 'NCSEF Parent Release', 'Research Plan', 'Research Paper', 'Other ISEF Form'].map(t => (
                 <button key={t} onClick={() => setDocType(t)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition ${docType === t ? 'bg-black text-white border-black' : 'text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition ${docType === t ? 'bg-green-700 text-white border-green-700' : 'text-gray-600 border-gray-200 hover:border-gray-400'}`}>
                   {t}
                 </button>
               ))}
             </div>
             <div onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)}
               onDrop={handleDrop} onClick={() => fileRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${dragging ? 'border-black bg-gray-50 scale-[1.01]' : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'}`}>
-              <input ref={fileRef} type="file" className="hidden" onChange={handleFiles} />
+              className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${dragging ? 'border-green-700 bg-gray-50 scale-[1.01]' : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'}`}>
+              <input ref={fileRef} type="file" className="hidden" onChange={handleFiles} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
               {Ico.upload('w-10 h-10 text-gray-300 mx-auto mb-3')}
-              <p className="text-sm font-semibold text-black mb-1">{dragging ? 'Drop it!' : 'Drag & drop your file here'}</p>
-              <p className="text-xs text-gray-400">or click to browse — PDF, DOCX, PNG up to 25 MB</p>
+              <p className="text-sm font-semibold text-black mb-1">{uploading ? 'Uploading…' : dragging ? 'Drop it!' : 'Drag & drop your file here'}</p>
+              <p className="text-xs text-gray-400">or click to browse — PDF, DOCX, PNG up to 5 MB</p>
               <p className="text-xs text-gray-400 mt-1">Uploading as: <span className="font-semibold text-black">{docType}</span></p>
             </div>
           </div>
@@ -1655,7 +2017,7 @@ function ResearchTab({ activeRole, user, documents, setDocuments }) {
           <p className="text-sm text-gray-600 mb-4">Provide specific, actionable feedback so the student knows exactly what to revise.</p>
           <textarea value={denyReason} onChange={e => setDenyReason(e.target.value)} rows={5}
             placeholder="e.g. Please revise the methodology section — your control variables need clearer definitions…"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none transition" />
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none transition" />
           <div className="flex gap-2.5 mt-4">
             <button onClick={() => setDenyDocId(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
             <button onClick={submitDeny} disabled={!denyReason.trim()} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition disabled:opacity-40 disabled:cursor-not-allowed">Send Feedback</button>
@@ -1670,35 +2032,69 @@ function ResearchTab({ activeRole, user, documents, setDocuments }) {
    TAB 5 — SUPPORT TICKETS
    ================================================================ */
 
-function SupportTab({ tickets, setTickets, user, activeRole }) {
-  const [subject, setSubject]     = useState('')
-  const [message, setMessage]     = useState('')
+function SupportTab({ user, activeRole }) {
+  const [subject, setSubject]       = useState('')
+  const [message, setMessage]       = useState('')
   const [replyingId, setReplyingId] = useState(null)
-  const [replyText, setReplyText] = useState('')
-  const [toast, setToast]         = useState(null)
+  const [replyText, setReplyText]   = useState('')
+  const [toast, setToast]           = useState(null)
+  const [tickets, setTickets]       = useState([])
 
-  const myTickets    = tickets.filter(t => t.studentId === user.id)
-  const allTickets   = [...tickets].sort((a, b) => b.id - a.id)
+  const fetchTickets = useCallback(async () => {
+    // RLS scopes this automatically: students see their own, admins see all.
+    const { data } = await supabase
+      .from('tickets')
+      .select('*, profiles(name), ticket_replies(id, body, created_at)')
+      .order('created_at', { ascending: false })
+    setTickets((data ?? []).map(t => {
+      const replies = [...(t.ticket_replies ?? [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      return {
+        id: t.id,
+        subject: t.subject,
+        message: t.body,
+        status: TICKET_STATUS_LABELS[t.status] ?? t.status,
+        reply: replies.length ? replies[replies.length - 1].body : null,
+        studentName: t.profiles?.name ?? '',
+        studentId: t.user_id,
+        date: fmtDate(t.created_at),
+        time: fmtTime(t.created_at),
+      }
+    }))
+  }, [])
 
-  const submitQuestion = (e) => {
+  useEffect(() => { fetchTickets() }, [fetchTickets])
+
+  const myTickets  = tickets.filter(t => t.studentId === user.id)
+  const allTickets = tickets
+
+  const submitQuestion = async (e) => {
     e.preventDefault()
     if (!subject.trim() || !message.trim()) return
-    setTickets(prev => [{
-      id: Date.now(), studentName: user.name, studentId: user.id,
-      subject: subject.trim(), message: message.trim(),
-      status: 'Unanswered', reply: null,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-    }, ...prev])
-    setToast({ message: "Question submitted — we'll respond shortly.", type: 'success' })
-    setSubject(''); setMessage('')
+    const { error } = await supabase.from('tickets').insert({
+      user_id: user.id, subject: subject.trim(), body: message.trim(),
+    })
+    if (error) {
+      setToast({ message: 'Could not submit your question. Try again.', type: 'error' })
+    } else {
+      setToast({ message: "Question submitted — we'll respond shortly.", type: 'success' })
+      setSubject(''); setMessage('')
+      fetchTickets()
+    }
   }
 
-  const sendReply = (id) => {
+  const sendReply = async (id) => {
     if (!replyText.trim()) return
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'Replied', reply: replyText.trim() } : t))
-    setToast({ message: 'Reply sent to student.', type: 'success' })
-    setReplyingId(null); setReplyText('')
+    const { error } = await supabase.from('ticket_replies').insert({
+      ticket_id: id, user_id: user.id, body: replyText.trim(),
+    })
+    if (error) {
+      setToast({ message: 'Could not send the reply. Try again.', type: 'error' })
+    } else {
+      await supabase.from('tickets').update({ status: 'answered' }).eq('id', id)
+      setToast({ message: 'Reply sent to student.', type: 'success' })
+      setReplyingId(null); setReplyText('')
+      fetchTickets()
+    }
   }
 
   return (
@@ -1721,16 +2117,16 @@ function SupportTab({ tickets, setTickets, user, activeRole }) {
               <div>
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Subject</label>
                 <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Question about Form 1A deadline"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition" required />
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Your Question</label>
                 <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4}
                   placeholder="Describe your question in detail…"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none transition" required />
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none transition" required />
               </div>
               <button type="submit"
-                className="w-full bg-black text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition">
+                className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-800 transition">
                 Submit Question
               </button>
             </form>
@@ -1805,12 +2201,12 @@ function SupportTab({ tickets, setTickets, user, activeRole }) {
                       <div className="mt-3 animate-fade-in">
                         <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3}
                           placeholder="Type your reply…"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none transition" />
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none transition" />
                         <div className="flex gap-2 mt-2">
                           <button onClick={() => { setReplyingId(null); setReplyText('') }}
                             className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
                           <button onClick={() => sendReply(t.id)} disabled={!replyText.trim()}
-                            className="px-4 py-2 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 transition disabled:opacity-40">Send Reply</button>
+                            className="px-4 py-2 rounded-xl bg-green-700 text-white text-xs font-semibold hover:bg-green-800 transition disabled:opacity-40">Send Reply</button>
                         </div>
                       </div>
                     ) : (
@@ -1834,16 +2230,32 @@ function SupportTab({ tickets, setTickets, user, activeRole }) {
    TAB 6 — CLUB ROSTER (ADMIN ONLY)
    ================================================================ */
 
-function RosterTab({ attendanceLogs }) {
-  const [toast, setToast] = useState(null)
+function RosterTab() {
+  const [toast, setToast]           = useState(null)
+  const [members, setMembers]       = useState([])
+  const [meetingDates, setMeetingDates] = useState([])
+  const [logs, setLogs]             = useState([])
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: profiles }, { data: codes }, { data: logRows }] = await Promise.all([
+        supabase.from('profiles').select('id, name, email, role').order('name'),
+        supabase.from('attendance_codes').select('date').order('date'),
+        supabase.from('attendance_logs').select('user_id, date'),
+      ])
+      setMembers((profiles ?? []).filter(p => p.role === 'student'))
+      setMeetingDates((codes ?? []).map(c => c.date))
+      setLogs(logRows ?? [])
+    })()
+  }, [])
+
+  const present = (memberId, date) => logs.some(l => l.user_id === memberId && l.date === date)
 
   const handleExport = () => {
-    const header = ['Student', 'Email', ...MEETING_DATES].join(',')
-    const rows = ROSTER_STUDENTS.map(s => {
-      const cols = MEETING_DATES.map(d =>
-        attendanceLogs.some(l => l.name === s.name && l.date === d) ? 'Present' : 'Absent'
-      )
-      return [s.name, s.email, ...cols].join(',')
+    const header = ['Student', 'Email', ...meetingDates.map(fmtDate)].join(',')
+    const rows = members.map(m => {
+      const cols = meetingDates.map(d => (present(m.id, d) ? 'Present' : 'Absent'))
+      return [m.name, m.email ?? '', ...cols].join(',')
     })
     downloadText('STEMRC_Attendance_Roster.csv', [header, ...rows].join('\n'))
     setToast({ message: 'STEMRC_Attendance_Roster.csv exported successfully.', type: 'success' })
@@ -1859,7 +2271,7 @@ function RosterTab({ attendanceLogs }) {
           <p className="text-sm text-gray-500 mt-1">Attendance matrix across all scheduled meeting dates</p>
         </div>
         <button onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition">
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-700 text-white rounded-xl text-sm font-semibold hover:bg-green-800 transition">
           {Ico.export('w-4 h-4')} Export Table
         </button>
       </div>
@@ -1867,15 +2279,9 @@ function RosterTab({ attendanceLogs }) {
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: 'Members', value: ROSTER_STUDENTS.length },
-          { label: 'Meetings', value: MEETING_DATES.length },
-          { label: 'Total Check-ins', value: (() => {
-            let count = 0
-            ROSTER_STUDENTS.forEach(s => MEETING_DATES.forEach(d => {
-              if (attendanceLogs.some(l => l.name === s.name && l.date === d)) count++
-            }))
-            return count
-          })() },
+          { label: 'Members', value: members.length },
+          { label: 'Meetings', value: meetingDates.length },
+          { label: 'Total Check-ins', value: logs.length },
         ].map(s => (
           <div key={s.label} className="bg-white border border-gray-200 rounded-2xl p-5">
             <p className="text-3xl font-bold text-black">{s.value}</p>
@@ -1886,39 +2292,42 @@ function RosterTab({ attendanceLogs }) {
 
       {/* Matrix table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        {members.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-400">
+            No members yet. Accounts are created in the Supabase dashboard (Authentication → Add user).
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 min-w-[160px]">Student</th>
-                {MEETING_DATES.map(d => (
-                  <th key={d} className="px-4 py-3 text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{d}</th>
+                {meetingDates.map(d => (
+                  <th key={d} className="px-4 py-3 text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{fmtDate(d)}</th>
                 ))}
                 <th className="px-4 py-3 text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {ROSTER_STUDENTS.map(student => {
-                const attended = MEETING_DATES.map(d =>
-                  attendanceLogs.some(l => l.name === student.name && l.date === d)
-                )
+              {members.map(student => {
+                const attended = meetingDates.map(d => present(student.id, d))
                 const total = attended.filter(Boolean).length
                 return (
-                  <tr key={student.name} className="hover:bg-gray-50 transition">
+                  <tr key={student.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-3 sticky left-0 bg-white">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
                           {student.name.charAt(0)}
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-black">{student.name}</p>
-                          <p className="text-[10px] text-gray-400 font-mono">{student.email}</p>
+                          <p className="text-[10px] text-gray-400 font-mono">{student.email ?? ''}</p>
                         </div>
                       </div>
                     </td>
-                    {attended.map((present, i) => (
+                    {attended.map((isPresent, i) => (
                       <td key={i} className="px-4 py-3 text-center">
-                        {present ? (
+                        {isPresent ? (
                           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100">
                             {Ico.check('w-3.5 h-3.5 text-green-600')}
                           </span>
@@ -1930,8 +2339,8 @@ function RosterTab({ attendanceLogs }) {
                       </td>
                     ))}
                     <td className="px-4 py-3 text-center">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${total === MEETING_DATES.length ? 'bg-green-100 text-green-700' : total === 0 ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-600'}`}>
-                        {total}/{MEETING_DATES.length}
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${meetingDates.length > 0 && total === meetingDates.length ? 'bg-green-100 text-green-700' : total === 0 ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-600'}`}>
+                        {total}/{meetingDates.length}
                       </span>
                     </td>
                   </tr>
@@ -1940,6 +2349,7 @@ function RosterTab({ attendanceLogs }) {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   )
@@ -1950,53 +2360,81 @@ function RosterTab({ attendanceLogs }) {
    ================================================================ */
 
 export default function App() {
-  const [user, setUser]               = useState(null)
-  const [activeRole, setActiveRole]   = useState('student')
-  const [activeTab, setActiveTab]     = useState('attendance')
-  const [attendanceLogs, setAttendanceLogs] = useState(INITIAL_ATTENDANCE)
-  const [documents, setDocuments]     = useState(INITIAL_DOCUMENTS)
-  const [tickets, setTickets]         = useState(INITIAL_TICKETS)
+  const [view, setView]           = useState('home')   // 'home' | 'login' (pre-auth views)
+  const [session, setSession]     = useState(null)
+  const [user, setUser]           = useState(null)     // profile: { id, email, name, role, initials }
+  const [authReady, setAuthReady] = useState(false)
+  const [activeTab, setActiveTab] = useState('attendance')
 
   useEffect(() => {
-    if (activeRole === 'student' && activeTab === 'roster') {
-      setActiveTab('attendance')
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setAuthReady(true)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!session) { setUser(null); return }
+    let cancelled = false
+    supabase.from('profiles').select('*').eq('id', session.user.id).single().then(({ data }) => {
+      if (cancelled) return
+      if (data) {
+        setUser({
+          id: data.id,
+          email: session.user.email,
+          name: data.name,
+          role: data.role,
+          initials: initialsOf(data.name),
+        })
+        setActiveTab('attendance')
+      }
+    })
+    return () => { cancelled = true }
+  }, [session])
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    setView('home')
+    setActiveTab('attendance')
+  }
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (session) {
+      // Signed in, profile still loading.
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      )
     }
-  }, [activeRole])
+    if (view === 'login') return <LoginPage onBack={() => setView('home')} />
+    return <HomePage onLoginClick={() => setView('login')} />
+  }
 
-  const login  = (u) => { setUser(u); setActiveRole(u.role); setActiveTab('attendance') }
-  const logout = () => { setUser(null); setActiveRole('student'); setActiveTab('attendance') }
-
-  if (!user) return <LoginPage onLogin={login} />
+  const activeRole = user.role
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Role toggle */}
-      <div className="fixed bottom-5 right-5 z-50">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Demo Role</p>
-          <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-            {['student', 'admin'].map(role => (
-              <button key={role} onClick={() => setActiveRole(role)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-all ${activeRole === role ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:text-black'}`}>
-                {role}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} activeRole={activeRole} onLogout={logout} />
 
       <main className="flex-1 overflow-auto">
         <div className="p-8 pb-24">
-          {activeTab === 'attendance' && (
-            <AttendanceTab logs={attendanceLogs} onAddLog={log => setAttendanceLogs(prev => [...prev, log])} user={user} />
-          )}
+          {activeTab === 'attendance' && <AttendanceTab user={user} />}
           {activeTab === 'mentor'   && <MentorTab activeRole={activeRole} user={user} />}
           {activeTab === 'forms'    && <FormsTab />}
-          {activeTab === 'research' && <ResearchTab activeRole={activeRole} user={user} documents={documents} setDocuments={setDocuments} />}
-          {activeTab === 'support'  && <SupportTab tickets={tickets} setTickets={setTickets} user={user} activeRole={activeRole} />}
-          {activeTab === 'roster'   && activeRole === 'admin' && <RosterTab attendanceLogs={attendanceLogs} />}
+          {activeTab === 'research' && <ResearchTab activeRole={activeRole} user={user} />}
+          {activeTab === 'support'  && <SupportTab user={user} activeRole={activeRole} />}
+          {activeTab === 'roster'   && activeRole === 'admin' && <RosterTab />}
         </div>
       </main>
     </div>
