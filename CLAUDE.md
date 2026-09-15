@@ -16,10 +16,12 @@ questions.
 > This is the STEM **research** club dashboard — **distinct from STEM Racing**
 > (the F1-in-Schools team, a separate activity).
 
-**Current state: front-end only.** All data is hardcoded mock state held in React;
-there is **no backend, no database, no auth server.** Role (`student` vs `admin`)
-comes from which mock account you sign in with (`CLUB_USERS`); there is no visible
-demo UI. The obvious next frontier is real persistence/auth.
+**Current state: fully operational.** Auth, database, and file storage run on
+**Supabase** (project `stemrc`, free tier, org "GLHS STEMRC"); hosting is
+**Vercel** (project `stem-dashboard-glhs`, Hobby tier) at
+https://stem-dashboard-glhs.vercel.app. Role (`student` vs `admin`) comes from
+the `profiles` table. Accounts are created by an admin in the Supabase dashboard
+(Authentication → Add user); a trigger auto-creates the profile row.
 
 The app opens on a **public homepage** (`HomePage` in App.jsx) with club info,
 officers, and a "Member Login" button that leads to `LoginPage` → the portal.
@@ -29,19 +31,35 @@ for headings/identity (`blue-900`/`blue-950`).
 ## The 30-second mental model
 
 ```
-index.html → src/main.jsx → src/App.jsx   ← ~2,000 lines = the WHOLE app
+index.html → src/main.jsx → src/App.jsx   ← ~2,400 lines = the WHOLE app UI
                                  │
-   mock data (CLUB_USERS, ISEF_FORMS, WIZARD_QUESTIONS, INITIAL_*)  +  reusable UI (Modal, Toast, DocViewerModal)
+   src/lib/supabase.js (client) + static data (ISEF_FORMS, WIZARD_QUESTIONS) + reusable UI (Modal, Toast, DocViewerModal)
                                  │
    Sidebar → activeTab dispatch (no router) → 6 tab components
                                  │
-   top-level state in App: user, activeRole, activeTab, attendanceLogs, documents, tickets
+   each tab fetches its own data from Supabase; RLS scopes rows per role
 ```
 
-Six tabs: **Attendance** (daily code `RESEARCH2026`), **Mentor Sign-Up** (shifts),
-**Forms** (an 8-question wizard that recommends which ISEF forms a project needs +
-per-form guidance + PDF view/download), **Research Hub** (doc upload + admin
-approve/deny), **Questions** (tickets), **Roster** (admin-only).
+Six tabs: **Attendance** (admin sets a daily code in `attendance_codes`; students
+check in via the `log_attendance` RPC), **Mentor Sign-Up** (shifts + signups,
+capacity enforced by a DB trigger), **Forms** (an 8-question wizard that recommends
+which ISEF forms a project needs + per-form guidance + PDF view/download — fully
+static), **Research Hub** (uploads to the private `documents` storage bucket, 5 MB
+cap; admin approve/deny), **Questions** (tickets + replies), **Roster** (admin-only
+attendance matrix; meeting dates = rows in `attendance_codes`).
+
+## Backend (Supabase)
+
+- Schema, RLS policies, functions, and the storage bucket live in
+  `supabase/schema.sql` + `supabase/followup.sql` — the source of truth for the DB.
+- Env vars: `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (publishable key) in
+  `.env.local` locally (gitignored; see `.env.example`) and in Vercel project
+  settings for production. The publishable key is safe to expose; RLS is the
+  security boundary — never weaken a policy casually.
+- Students never read `attendance_codes`; check-in goes through the
+  security-definer RPC `log_attendance(p_code)`.
+- Free-tier note: a Supabase free project **pauses after ~1 week with no
+  traffic** and must be resumed from the dashboard. Regular club use prevents it.
 
 ## Repository layout
 
@@ -73,8 +91,6 @@ npm run build          # production build → dist/
 
 ## Conventions & gotchas (read before editing)
 
-- **Everything is mock data in `App.jsx`.** Two mock accounts (`student@stemrc.org`,
-  `admin@stemrc.org`); the attendance code is `RESEARCH2026`. These are not secrets.
 - **The Forms wizard maps to real forms.** `WIZARD_QUESTIONS` `required` tags map to
   `ISEF_FORMS`, which point at the real PDFs in `public/pdfs/`. When updating forms,
   keep the wizard tags, the `ISEF_FORMS` entries, and the PDF files in sync.
@@ -88,7 +104,9 @@ npm run build          # production build → dist/
 
 ## Honest scope
 
-A front-end-only prototype with mock data — no persistence, auth server, or backend.
-It demonstrates the full club workflow (attendance, shifts, ISEF form guidance, doc
-review, Q&A) but nothing is saved across reloads. State that plainly; the real next
-step is a backend + auth.
+A real, deployed app on free tiers: Supabase (auth + Postgres + storage, RLS
+throughout) and Vercel hosting. Known gaps: no in-app password change or reset
+(admins reset passwords in the Supabase dashboard — email-based reset would need
+custom SMTP), no in-app account creation (admins add users in the dashboard),
+and profile names default to the email prefix unless set via user metadata or
+edited by an admin.
