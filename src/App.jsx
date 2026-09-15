@@ -809,6 +809,21 @@ function MediaPlaceholder({ label = 'Photo coming soon', className = '' }) {
   )
 }
 
+const HOME_SEASON = [
+  { when: 'February',    what: 'NCSEF Region 3A fair' },
+  { when: 'March',       what: 'NCSEF state fair, Raleigh' },
+  { when: 'March',       what: 'NCSAS paper presentations' },
+  { when: 'May',         what: 'Regeneron ISEF (state qualifiers)' },
+  { when: 'End of year', what: 'Green Level Journal published' },
+]
+
+const HOME_JOIN_STEPS = [
+  { n: 1, title: 'Apply in the fall', desc: 'The application is announced in the daily announcements and on Instagram at the start of the school year.' },
+  { n: 2, title: 'Pick a question', desc: 'Early meetings cover how to turn a topic you care about into a question you can actually test.' },
+  { n: 3, title: 'Run the project', desc: 'Work independently or with a group. Mentors and officers help with design, materials, and the regulatory forms.' },
+  { n: 4, title: 'Compete or publish', desc: 'Enter NCSEF or NCSAS in the spring, and publish your write-up in the journal either way.' },
+]
+
 function HomePage({ onLoginClick }) {
   const navLinks = [
     { href: '#about',        label: 'About' },
@@ -823,48 +838,101 @@ function HomePage({ onLoginClick }) {
     <div className="min-h-screen bg-white text-black antialiased">
       {/* ---------- NAV ---------- */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 h-16 flex items-center justify-between gap-4">
           <a href="#top" className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-              {Ico.logo('w-4 h-4 text-white')}
+            <div className="w-9 h-9 bg-blue-950 rounded-lg flex items-center justify-center flex-shrink-0">
+              {Ico.logo('w-5 h-5 text-white')}
             </div>
-            <p className="text-sm font-bold tracking-tight truncate">STEM Research Club</p>
+            <div className="leading-tight">
+              <p className="text-sm font-bold tracking-tight text-blue-950">STEM Research Club</p>
+              <p className="text-[11px] text-gray-500">Green Level High School</p>
+            </div>
           </a>
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-7">
             {navLinks.map(l => (
               <a key={l.href} href={l.href}
-                className="text-sm text-gray-600 hover:text-black transition">
+                className="text-sm text-gray-600 hover:text-blue-950 transition">
                 {l.label}
               </a>
             ))}
           </nav>
           <button onClick={onLoginClick}
-            className="bg-green-700 text-white px-3.5 py-1.5 rounded-md text-sm font-medium hover:bg-green-800 transition flex-shrink-0">
+            className="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition flex-shrink-0">
             Member Login
           </button>
         </div>
       </header>
 
       {/* ---------- HERO ---------- */}
-      <section id="top">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-10 sm:pb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold leading-tight max-w-3xl text-blue-950">
-            Student research at Green Level High School
-          </h1>
-          <p className="mt-5 text-base text-gray-600 leading-relaxed max-w-2xl">
-            STEMRC members design and run their own research projects and inventions, on
-            almost any topic, and enter them in North Carolina's science fairs. Meetings are
-            every other week. No prior research experience is expected.
-          </p>
-          <MediaPlaceholder label="Club photo coming soon" className="mt-10 aspect-[21/9]" />
+      <section id="top" className="border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-16 items-start">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-blue-950 leading-[1.08] tracking-tight">
+              Student research at<br className="hidden sm:block" /> Green Level High School
+            </h1>
+            <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-xl">
+              STEMRC members design and run their own research projects and inventions, on
+              almost any topic, and enter them in North Carolina's science fairs. Meetings are
+              every other week. No prior research experience is expected.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={onLoginClick}
+                className="bg-green-700 text-white px-6 py-3 rounded-md text-sm font-semibold hover:bg-green-800 transition">
+                Member Login
+              </button>
+              <a href="#join"
+                className="px-6 py-3 rounded-md text-sm font-semibold border border-gray-300 text-blue-950 hover:border-blue-950 transition">
+                How joining works
+              </a>
+            </div>
+            <dl className="mt-12 grid sm:grid-cols-3 gap-6 max-w-xl">
+              {[
+                ['Meetings', 'Every other week, room posted each semester'],
+                ['Who can join', 'All grades, every STEM discipline'],
+                ['Workload', 'About 45 minutes a week outside meetings'],
+              ].map(([term, def]) => (
+                <div key={term} className="border-t-2 border-blue-950 pt-3">
+                  <dt className="text-sm font-bold text-blue-950">{term}</dt>
+                  <dd className="mt-1 text-sm text-gray-600 leading-snug">{def}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div className="bg-blue-950 text-white rounded-2xl p-7 sm:p-8">
+            <h2 className="text-lg font-bold">The season ahead</h2>
+            <p className="mt-1 text-sm text-blue-200">Exact dates firm up at fall meetings.</p>
+            <ul className="mt-6 divide-y divide-white/10">
+              {HOME_SEASON.map((s, i) => (
+                <li key={i} className="py-3 flex items-baseline gap-4">
+                  <span className="text-xs font-bold text-green-400 uppercase w-24 flex-shrink-0">{s.when}</span>
+                  <span className="text-sm text-blue-50">{s.what}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="#competitions" className="mt-5 inline-block text-sm text-green-400 hover:text-green-300 transition underline underline-offset-4 decoration-green-400/40">
+              More on each competition
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- PHOTO STRIP ---------- */}
+      <section className="bg-gray-50 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MediaPlaceholder label="Club meeting" className="aspect-[4/3] md:col-span-2 md:aspect-auto" />
+            <MediaPlaceholder label="Fair day" className="aspect-[4/3]" />
+            <MediaPlaceholder label="Outreach event" className="aspect-[4/3]" />
+          </div>
         </div>
       </section>
 
       {/* ---------- ABOUT ---------- */}
-      <section id="about" className="scroll-mt-4 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-16">
+      <section id="about" className="scroll-mt-4 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-950">About the club</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">About the club</h2>
             <p className="mt-5 text-gray-600 leading-relaxed">
               Science fair research has a lot of moving parts: picking a question worth asking,
               designing an experiment, getting regulatory approval for certain project types,
@@ -884,32 +952,56 @@ function HomePage({ onLoginClick }) {
               running it ethically.
             </p>
           </div>
-          <MediaPlaceholder label="Meeting photo" className="aspect-[4/3] lg:aspect-auto lg:min-h-full" />
+          <MediaPlaceholder label="Meeting photo" className="aspect-[4/3]" />
         </div>
       </section>
 
-      {/* ---------- ACTIVITIES ---------- */}
-      <section id="activities" className="scroll-mt-4 border-t border-gray-200 bg-green-50/50">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">What the club does</h2>
-          <div className="mt-8 divide-y divide-gray-200 border-t border-b border-gray-200">
+      {/* ---------- WHAT THE CLUB DOES ---------- */}
+      <section className="bg-green-50/60 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+          <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">What the club does</h2>
+          <div className="mt-8 grid md:grid-cols-2 gap-5">
             {HOME_PROGRAMS.map(p => (
-              <div key={p.title} className="py-6 grid sm:grid-cols-[220px_1fr] gap-2 sm:gap-8">
-                <h3 className="text-[15px] font-semibold">{p.title}</h3>
-                <p className="text-[15px] text-gray-600 leading-relaxed">{p.desc}</p>
+              <div key={p.title} className="bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="text-base font-bold text-blue-950">{p.title}</h3>
+                <p className="mt-2 text-[15px] text-gray-600 leading-relaxed">{p.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ---------- HOW JOINING WORKS ---------- */}
+      <section id="join" className="scroll-mt-4 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">How joining works</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              Membership is by application, once a year. Accepted members get a portal account
+              and meeting details.
+            </p>
+          </div>
+          <ol className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
+            {HOME_JOIN_STEPS.map(step => (
+              <li key={step.n}>
+                <div className="w-9 h-9 rounded-full bg-blue-950 text-white flex items-center justify-center text-sm font-bold">
+                  {step.n}
+                </div>
+                <h3 className="mt-4 text-base font-bold text-blue-950">{step.title}</h3>
+                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{step.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
       {/* ---------- PROJECTS & SERVICE ---------- */}
-      <section id="projects" className="scroll-mt-4 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Projects &amp; service</h2>
-          <div className="mt-6 grid lg:grid-cols-2 gap-10 lg:gap-16">
+      <section id="projects" className="scroll-mt-4 bg-gray-50 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+          <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Projects &amp; service</h2>
+          <div className="mt-8 grid lg:grid-cols-2 gap-10 lg:gap-16">
             <div>
-              <h3 className="text-lg font-semibold">Member projects</h3>
+              <h3 className="text-lg font-bold text-blue-950">Member projects</h3>
               <p className="mt-3 text-gray-600 leading-relaxed">
                 Research is done independently or with a group of peers in the club, on a topic
                 you pick. Many members use their project to explore a field they are considering
@@ -917,28 +1009,28 @@ function HomePage({ onLoginClick }) {
                 the journal, or simply finished for their own sake.
               </p>
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <MediaPlaceholder label="Project photo" className="aspect-[4/3]" />
-                <MediaPlaceholder label="Project photo" className="aspect-[4/3]" />
+                <MediaPlaceholder label="Project photo" className="aspect-[4/3] bg-white" />
+                <MediaPlaceholder label="Project photo" className="aspect-[4/3] bg-white" />
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Outreach and community service</h3>
+              <h3 className="text-lg font-bold text-blue-950">Outreach and community service</h3>
               <p className="mt-3 text-gray-600 leading-relaxed">
                 The club also runs outreach and service events in the school and the wider
                 community, organized by our three Directors of Outreach &amp; Community Service.
                 Details for the current year's events are announced at meetings and on Instagram.
               </p>
-              <MediaPlaceholder label="Service event photo" className="mt-6 aspect-[16/7]" />
+              <MediaPlaceholder label="Service event photo" className="mt-6 aspect-[16/7] bg-white" />
             </div>
           </div>
         </div>
       </section>
 
       {/* ---------- GREEN LEVEL JOURNAL ---------- */}
-      <section id="journal" className="scroll-mt-4 border-t border-gray-200 bg-green-50/50">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-16 items-start">
+      <section id="journal" className="scroll-mt-4 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1fr_320px] gap-12 lg:gap-20 items-center">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-950">The Green Level Journal</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">The Green Level Journal</h2>
             <p className="mt-5 text-gray-600 leading-relaxed">
               The club publishes a school research journal at the end of each year, containing
               members' thesis papers and research projects. Publishing is open to any member
@@ -950,29 +1042,24 @@ function HomePage({ onLoginClick }) {
               editing side rather than as an author, talk to the Director of Research at a meeting.
             </p>
           </div>
-          <MediaPlaceholder label="Journal cover" className="aspect-[3/4] max-w-[280px]" />
+          <MediaPlaceholder label="Journal cover" className="aspect-[3/4]" />
         </div>
       </section>
 
       {/* ---------- COMPETITIONS ---------- */}
-      <section id="competitions" className="scroll-mt-4 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Where we compete</h2>
+      <section id="competitions" className="scroll-mt-4 bg-green-50/60 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+          <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Where we compete</h2>
           <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
             Exact dates change each year and are announced at fall meetings.
           </p>
-          <div className="mt-8 space-y-8">
+          <div className="mt-8 grid md:grid-cols-3 gap-5">
             {HOME_COMPETITIONS.map(c => (
-              <div key={c.name} className="grid sm:grid-cols-[220px_1fr] gap-2 sm:gap-8">
-                <div>
-                  <h3 className="text-[15px] font-semibold">{c.name}</h3>
-                  <p className="text-sm text-gray-400 mt-0.5">{c.when}</p>
-                </div>
-                <div>
-                  <p className="text-[15px] text-gray-600 leading-relaxed">
-                    <span className="text-blue-950 font-medium">{c.full}.</span> {c.detail}
-                  </p>
-                </div>
+              <div key={c.name} className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
+                <h3 className="text-lg font-bold text-blue-950">{c.name}</h3>
+                <p className="text-sm text-gray-500 mt-0.5">{c.full}</p>
+                <p className="mt-3 text-[15px] text-gray-600 leading-relaxed flex-1">{c.detail}</p>
+                <p className="mt-4 pt-4 border-t border-gray-100 text-sm font-semibold text-green-700">{c.when}</p>
               </div>
             ))}
           </div>
@@ -980,84 +1067,136 @@ function HomePage({ onLoginClick }) {
       </section>
 
       {/* ---------- MEMBER PORTAL ---------- */}
-      <section className="border-t border-gray-200 bg-green-50/50">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-16 items-start">
+      <section className="bg-blue-950 text-white">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1fr_1fr] gap-12 lg:gap-16 items-center">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-950">The member portal</h2>
-            <p className="mt-5 text-gray-600 leading-relaxed">
-              Members use the portal to check in at meetings, sign up for mentor and volunteer
-              shifts, and file questions for the board. It also holds the club's ISEF paperwork
-              tools: a short questionnaire that tells you which of the 18 official regulatory
-              forms your project needs, the forms themselves as downloadable PDFs, and an upload
-              area where officers review submitted documents.
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">The member portal</h2>
+            <p className="mt-5 text-blue-100 leading-relaxed">
+              Members run the club through this site. Accounts are created for accepted
+              members at the start of the year.
             </p>
             <button onClick={onLoginClick}
-              className="mt-6 bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition">
+              className="mt-7 bg-white text-blue-950 px-6 py-3 rounded-md text-sm font-semibold hover:bg-blue-50 transition">
               Sign in
             </button>
-            <p className="mt-3 text-sm text-gray-400">Accounts are created for members at the start of the year.</p>
           </div>
-          <MediaPlaceholder label="Portal screenshot" className="aspect-[4/3]" />
-        </div>
-      </section>
-
-      {/* ---------- OFFICERS ---------- */}
-      <section id="officers" className="scroll-mt-4 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Officers and advisor</h2>
-          <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
-            Our 2026–27 roster is coming soon. The board below is from the 2025–26 school year.
-          </p>
-          <div className="mt-8 divide-y divide-gray-200 border-t border-b border-gray-200">
-            {[...BOARD_MEMBERS, ...ADVISORS].map(m => (
-              <div key={m.email} className="py-5 flex items-center gap-5">
-                <MediaPlaceholder label="" className="w-12 h-12 !rounded-full flex-shrink-0" />
-                <div className="grid sm:grid-cols-[220px_1fr] gap-1 sm:gap-8 flex-1 min-w-0 items-center">
-                  <div>
-                    <p className="text-[15px] font-semibold">{m.name}</p>
-                    <p className="text-sm text-gray-500">{m.role}</p>
-                  </div>
-                  <a href={`mailto:${m.email}`} className="text-sm text-gray-500 underline decoration-gray-300 underline-offset-2 hover:text-black transition truncate">
-                    {m.email}
-                  </a>
-                </div>
+          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-7">
+            {[
+              ['Meeting check-in', 'Log attendance with the code written on the board at each meeting.'],
+              ['ISEF forms wizard', 'Eight questions tell you which of the 18 official regulatory forms your project needs, with the PDFs to download.'],
+              ['Document review', 'Upload forms and research plans; officers review and send feedback.'],
+              ['Shifts and questions', 'Sign up for mentoring shifts and file questions for the board.'],
+            ].map(([t, d]) => (
+              <div key={t} className="border-t border-white/15 pt-4">
+                <h3 className="text-sm font-bold">{t}</h3>
+                <p className="mt-1.5 text-sm text-blue-200 leading-relaxed">{d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ---------- OFFICERS ---------- */}
+      <section id="officers" className="scroll-mt-4 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+          <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Officers and advisor</h2>
+          <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
+            Our 2026–27 roster is coming soon. The board below is from the 2025–26 school year.
+          </p>
+          <div className="mt-8 grid md:grid-cols-2 gap-x-12 divide-y md:divide-y-0 border-t border-gray-200 md:border-t-0">
+            <div className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
+              {[...BOARD_MEMBERS.slice(0, 5)].map(m => (
+                <div key={m.email} className="py-4 flex items-center gap-4">
+                  <MediaPlaceholder label="" className="w-11 h-11 !rounded-full flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-blue-950">{m.name}</p>
+                    <p className="text-sm text-gray-500">{m.role}</p>
+                    <a href={`mailto:${m.email}`} className="text-xs text-gray-400 hover:text-green-700 transition truncate block">{m.email}</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
+              {[...BOARD_MEMBERS.slice(5), ...ADVISORS].map(m => (
+                <div key={m.email} className="py-4 flex items-center gap-4">
+                  <MediaPlaceholder label="" className="w-11 h-11 !rounded-full flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-blue-950">{m.name}</p>
+                    <p className="text-sm text-gray-500">{m.role}</p>
+                    <a href={`mailto:${m.email}`} className="text-xs text-gray-400 hover:text-green-700 transition truncate block">{m.email}</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ---------- CONTACT ---------- */}
-      <section id="contact" className="scroll-mt-4 border-t border-gray-200 bg-green-50/50">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-blue-950">Contact</h2>
-          <div className="mt-6 max-w-2xl space-y-4 text-gray-600 leading-relaxed">
-            <p>
+      <section id="contact" className="scroll-mt-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Contact</h2>
+            <p className="mt-5 text-gray-600 leading-relaxed max-w-xl">
               Membership is by application. The application opens at the start of the school
-              year and is announced in the school's daily announcements and on Instagram at{' '}
-              <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer" className="text-green-700 underline decoration-green-300 underline-offset-2 hover:decoration-green-700 transition">@glstemrc</a>. Accepted members receive meeting details and a portal account.
+              year and is announced in the school's daily announcements and on Instagram.
+              Accepted members receive meeting details and a portal account.
             </p>
-            <p>
-              Questions about applying go to Jacob Michael,{' '}
-              <a href="mailto:jsmichael@students.wcpss.net" className="text-green-700 underline decoration-green-300 underline-offset-2 hover:decoration-green-700 transition">jsmichael@students.wcpss.net</a>,
-              or any officer listed above. Green Level High School, Cary, North Carolina.
+            <p className="mt-4 text-gray-600 leading-relaxed max-w-xl">
+              Green Level High School, Cary, North Carolina.
             </p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-7 self-start">
+            <h3 className="text-base font-bold text-blue-950">Reach us</h3>
+            <div className="mt-4 space-y-3 text-sm">
+              <p className="text-gray-600">
+                Instagram:{' '}
+                <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer"
+                  className="text-green-700 font-semibold hover:text-green-800 transition">@glstemrc</a>
+              </p>
+              <p className="text-gray-600">
+                Questions about applying:{' '}
+                <a href="mailto:jsmichael@students.wcpss.net"
+                  className="text-green-700 font-semibold hover:text-green-800 transition break-all">jsmichael@students.wcpss.net</a>
+              </p>
+              <p className="text-gray-600">Or email any officer listed above.</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ---------- FOOTER ---------- */}
-      <footer className="border-t border-gray-200">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="bg-blue-950 text-blue-200">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-12 grid sm:grid-cols-3 gap-10">
           <div>
-            <p className="text-sm text-gray-400">STEM Research Club, Green Level High School</p>
-            <p className="text-xs text-gray-400 mt-1">Site built and maintained by club members.</p>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                {Ico.logo('w-4 h-4 text-white')}
+              </div>
+              <p className="text-sm font-bold text-white">STEM Research Club</p>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed">Green Level High School<br />Cary, North Carolina</p>
           </div>
-          <div className="flex items-center gap-6 text-sm text-gray-400">
-            <a href="#about" className="hover:text-black transition">About</a>
-            <a href="#competitions" className="hover:text-black transition">Competitions</a>
-            <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer" className="hover:text-black transition">Instagram</a>
-            <button onClick={onLoginClick} className="hover:text-black transition">Member Login</button>
+          <div>
+            <p className="text-sm font-bold text-white">Site</p>
+            <div className="mt-3 space-y-2 text-sm">
+              <a href="#about" className="block hover:text-white transition">About</a>
+              <a href="#competitions" className="block hover:text-white transition">Competitions</a>
+              <a href="#journal" className="block hover:text-white transition">Journal</a>
+              <button onClick={onLoginClick} className="block hover:text-white transition">Member Login</button>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Elsewhere</p>
+            <div className="mt-3 space-y-2 text-sm">
+              <a href="https://www.instagram.com/glstemrc" target="_blank" rel="noreferrer" className="block hover:text-white transition">Instagram, @glstemrc</a>
+              <a href="mailto:jsmichael@students.wcpss.net" className="block hover:text-white transition">Email the board</a>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-white/10">
+          <div className="max-w-6xl mx-auto px-6 sm:px-10 py-5">
+            <p className="text-xs text-blue-300">Site built and maintained by club members.</p>
           </div>
         </div>
       </footer>
