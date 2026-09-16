@@ -56,7 +56,12 @@ attendance matrix; meeting dates = rows in `attendance_codes`).
 ## Backend (Supabase)
 
 - Schema, RLS policies, functions, and the storage bucket live in
-  `supabase/schema.sql` + `supabase/followup.sql` — the source of truth for the DB.
+  `supabase/schema.sql` + `supabase/followup.sql`, hardened by
+  `supabase/v3-hardening.sql` + `supabase/v4-audit-fixes.sql` (signup can never
+  set role; document inserts are pinned to pending/own-folder; profile emails
+  are admin-only via the `admin_list_profiles` RPC; attendance uses
+  America/New_York dates with a 5-guess daily limit; shift capacity is
+  race-safe). Apply them in order on a fresh project.
 - Env vars: `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (publishable key) in
   `.env.local` locally (gitignored; see `.env.example`) and in Vercel project
   settings for production. The publishable key is safe to expose; RLS is the

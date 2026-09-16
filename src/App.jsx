@@ -5,10 +5,18 @@ import { supabase, initialsOf } from './lib/supabase'
    DISPLAY HELPERS (dates & db → UI status labels)
    ================================================================ */
 
-function fmtDate(isoDate) {
-  // "2026-09-15" → "Sep 15, 2026" (parse as local date, not UTC)
-  const [y, m, d] = isoDate.split('T')[0].split('-').map(Number)
+function fmtDate(iso) {
+  // Timestamps ("2026-09-15T21:04:00Z") format in local time; date-only
+  // strings ("2026-09-15") parse as local calendar dates, not UTC.
+  if (iso.includes('T')) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+  const [y, m, d] = iso.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function localISODate(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function fmtTime(isoTimestamp) {
@@ -326,15 +334,14 @@ const ISEF_FORMS = [
     ],
   },
   {
-    id: 'f7', tag: 'Form 7', title: 'Continuation Projects',
+    id: 'f7', tag: 'Form 7', title: 'Display and Safety Acknowledgment',
     pdfSrc: '/pdfs/7-Display-Safety-Acknowledgment.pdf',
-    what: 'Required for Senior Division projects that are direct continuations of prior-year ISEF-affiliated research. Documents the scope of new work added this year versus findings carried forward from the previous project.',
+    what: 'Required when your project is physically displayed at the fair. Confirms your backboard, models, and any devices follow the display size limits, electrical rules, and prohibited-items list.',
     how: [
-      'Summarize the prior year\'s project, findings, and conclusions in the designated section',
-      'List every new hypothesis, procedure, dataset, and analysis introduced this year',
-      'Clearly distinguish new experimental work from prior-year results',
-      'Do NOT present prior-year data as new — this is a disqualifying violation',
-      'Have your Adult Sponsor and SRC member review and sign before submitting',
+      'Review the display size limits and the list of items not allowed on the exhibit floor',
+      'Confirm any electrical components meet the fair\'s wiring and power rules',
+      'Photographs and visuals must credit their source and have consent where people are shown',
+      'Sign the acknowledgment and bring it with your project on setup day',
     ],
   },
   {
@@ -422,83 +429,83 @@ function downloadText(filename, content) {
 
 const Ico = {
   attendance: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   ),
   mentor: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
   forms: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
   research: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
     </svg>
   ),
   support: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
     </svg>
   ),
   roster: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 10h18M3 14h18M10 4v16M3 4h18a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1z" />
     </svg>
   ),
   logout: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
     </svg>
   ),
   check: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
     </svg>
   ),
   x: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   ),
   chevronDown: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   ),
   upload: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
     </svg>
   ),
   download: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
     </svg>
   ),
   file: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
   location: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
   logo: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
     </svg>
   ),
   export: (cls) => (
-    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
     </svg>
   ),
@@ -697,6 +704,9 @@ function DocViewerModal({ doc, onClose }) {
   }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDownload = () => {
+    // Signed storage URLs are cross-origin, where the download attribute is
+    // ignored; open the attachment-disposition URL in a new tab instead.
+    if (doc.downloadUrl) { window.open(doc.downloadUrl, '_blank', 'noopener'); return }
     if (!pdfUrl) return
     const a = Object.assign(document.createElement('a'), { href: pdfUrl, download: doc.file })
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
@@ -801,10 +811,10 @@ const HOME_COMPETITIONS = [
 function MediaPlaceholder({ label = 'Photo coming soon', className = '' }) {
   return (
     <div className={`relative overflow-hidden rounded-xl border border-gray-200 bg-gray-100 flex flex-col items-center justify-center gap-2 ${className}`}>
-      <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
-      {label && <p className="text-xs text-gray-400">{label}</p>}
+      {label && <p className="text-xs text-gray-500">{label}</p>}
     </div>
   )
 }
@@ -825,6 +835,7 @@ const HOME_JOIN_STEPS = [
 ]
 
 function HomePage({ onLoginClick, signedIn = false }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const loginLabel = signedIn ? 'Open Portal' : 'Member Login'
   const navLinks = [
     { href: '#about',        label: 'About' },
@@ -868,19 +879,39 @@ function HomePage({ onLoginClick, signedIn = false }) {
               </a>
             ))}
           </nav>
-          <button onClick={onLoginClick}
-            className="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition flex-shrink-0">
-            {loginLabel}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={onLoginClick}
+              className="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
+              {loginLabel}
+            </button>
+            <button onClick={() => setMenuOpen(o => !o)} aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen}
+              className="lg:hidden w-10 h-10 flex items-center justify-center rounded-md text-blue-950 hover:bg-gray-100 transition">
+              {menuOpen ? Ico.x('w-5 h-5') : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
+        {menuOpen && (
+          <nav className="lg:hidden border-t border-gray-200 bg-white px-6 py-3 animate-fade-in">
+            {navLinks.map(l => (
+              <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+                className="block py-2.5 text-sm font-medium text-gray-700 hover:text-blue-950 transition">
+                {l.label}
+              </a>
+            ))}
+          </nav>
+        )}
       </header>
 
+      <main>
       {/* ---------- HERO ---------- */}
       <section id="top" className="bg-blue-950 text-white">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-16 items-start">
           <div>
-            <p className="text-sm font-semibold text-green-400">Welcome to STEMRC</p>
-            <h1 className="mt-3 text-4xl sm:text-5xl font-bold leading-[1.08] tracking-tight">
+            <h1 className="text-4xl sm:text-5xl font-bold leading-[1.08] tracking-tight">
               Attend our biweekly meetings to learn how to research.
             </h1>
             <p className="mt-6 text-lg text-blue-100 leading-relaxed max-w-xl">
@@ -942,7 +973,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- ABOUT ---------- */}
-      <section id="about" className="scroll-mt-4 border-b border-gray-200">
+      <section id="about" className="scroll-mt-20 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">About the club</h2>
@@ -989,7 +1020,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- HOW JOINING WORKS ---------- */}
-      <section id="join" className="scroll-mt-4 border-b border-gray-200">
+      <section id="join" className="scroll-mt-20 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
           <div className="max-w-2xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">How joining works</h2>
@@ -1013,7 +1044,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- PROJECTS & SERVICE ---------- */}
-      <section id="projects" className="scroll-mt-4 bg-gray-50 border-b border-gray-200">
+      <section id="projects" className="scroll-mt-20 bg-gray-50 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
           <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Projects &amp; service</h2>
           <div className="mt-8 grid lg:grid-cols-2 gap-10 lg:gap-16">
@@ -1044,7 +1075,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- GREEN LEVEL JOURNAL ---------- */}
-      <section id="journal" className="scroll-mt-4 border-b border-gray-200">
+      <section id="journal" className="scroll-mt-20 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1fr_320px] gap-12 lg:gap-20 items-center">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">The Green Level Journal</h2>
@@ -1064,7 +1095,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- COMPETITIONS ---------- */}
-      <section id="competitions" className="scroll-mt-4 bg-green-50/60 border-b border-gray-200">
+      <section id="competitions" className="scroll-mt-20 bg-green-50/60 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
           <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Where we compete</h2>
           <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
@@ -1128,7 +1159,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- OFFICERS ---------- */}
-      <section id="officers" className="scroll-mt-4 border-b border-gray-200">
+      <section id="officers" className="scroll-mt-20 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
           <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Officers and advisor</h2>
           <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
@@ -1138,11 +1169,13 @@ function HomePage({ onLoginClick, signedIn = false }) {
             <div className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
               {[...BOARD_MEMBERS.slice(0, 5)].map(m => (
                 <div key={m.email} className="py-4 flex items-center gap-4">
-                  <MediaPlaceholder label="" className="w-11 h-11 !rounded-full flex-shrink-0" />
+                  <div className="w-11 h-11 rounded-full bg-blue-950 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    {m.name.startsWith('[') ? '?' : initialsOf(m.name)}
+                  </div>
                   <div className="min-w-0">
                     <p className="text-[15px] font-semibold text-blue-950">{m.name}</p>
                     <p className="text-sm text-gray-500">{m.role}</p>
-                    <a href={`mailto:${m.email}`} className="text-xs text-gray-400 hover:text-green-700 transition truncate block">{m.email}</a>
+                    <a href={`mailto:${m.email}`} className="text-xs text-gray-500 hover:text-green-700 transition truncate block">{m.email}</a>
                   </div>
                 </div>
               ))}
@@ -1150,11 +1183,13 @@ function HomePage({ onLoginClick, signedIn = false }) {
             <div className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
               {[...BOARD_MEMBERS.slice(5), ...ADVISORS].map(m => (
                 <div key={m.email} className="py-4 flex items-center gap-4">
-                  <MediaPlaceholder label="" className="w-11 h-11 !rounded-full flex-shrink-0" />
+                  <div className="w-11 h-11 rounded-full bg-blue-950 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    {m.name.startsWith('[') ? '?' : initialsOf(m.name)}
+                  </div>
                   <div className="min-w-0">
                     <p className="text-[15px] font-semibold text-blue-950">{m.name}</p>
                     <p className="text-sm text-gray-500">{m.role}</p>
-                    <a href={`mailto:${m.email}`} className="text-xs text-gray-400 hover:text-green-700 transition truncate block">{m.email}</a>
+                    <a href={`mailto:${m.email}`} className="text-xs text-gray-500 hover:text-green-700 transition truncate block">{m.email}</a>
                   </div>
                 </div>
               ))}
@@ -1164,7 +1199,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
       </section>
 
       {/* ---------- CONTACT ---------- */}
-      <section id="contact" className="scroll-mt-4 bg-gray-50">
+      <section id="contact" className="scroll-mt-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Contact</h2>
@@ -1196,6 +1231,8 @@ function HomePage({ onLoginClick, signedIn = false }) {
         </div>
       </section>
 
+      </main>
+
       {/* ---------- FOOTER ---------- */}
       <footer className="bg-blue-950 text-blue-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-12 grid sm:grid-cols-3 gap-10">
@@ -1206,7 +1243,10 @@ function HomePage({ onLoginClick, signedIn = false }) {
               </div>
               <p className="text-sm font-bold text-white">STEM Research Club</p>
             </div>
-            <p className="mt-3 text-sm leading-relaxed">Green Level High School<br />Cary, North Carolina</p>
+            <p className="mt-3 text-sm leading-relaxed">
+              <a href="https://www.wcpss.net/greenlevelhs" target="_blank" rel="noreferrer" className="hover:text-white transition underline underline-offset-4 decoration-blue-300/40">Green Level High School</a>
+              <br />Cary, North Carolina
+            </p>
           </div>
           <div>
             <p className="text-sm font-bold text-white">Site</p>
@@ -1227,7 +1267,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
         </div>
         <div className="border-t border-white/10">
           <div className="max-w-6xl mx-auto px-6 sm:px-10 py-5">
-            <p className="text-xs text-blue-300">Site built and maintained by club members.</p>
+            <p className="text-xs text-blue-300">© {new Date().getFullYear()} STEM Research Club at Green Level High School. Site built and maintained by club members.</p>
           </div>
         </div>
       </footer>
@@ -1339,20 +1379,24 @@ function LoginPage({ onBack }) {
           <form onSubmit={submit} className="space-y-4">
             {mode === 'signup' && (
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Full Name</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="First and last name"
+                <label htmlFor="auth-name" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Full Name</label>
+                <input id="auth-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="First and last name"
+                  autoComplete="name"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
               </div>
             )}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@students.wcpss.net"
+              <label htmlFor="auth-email" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">School Email</label>
+              <input id="auth-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@students.wcpss.net"
+                autoComplete="email"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              <label htmlFor="auth-password" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Password</label>
+              <input id="auth-password" type="password" value={password} onChange={e => setPassword(e.target.value)}
                 placeholder={mode === 'signup' ? 'At least 8 characters' : '••••••••••'}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                minLength={mode === 'signup' ? 8 : undefined}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition" required />
             </div>
             <button type="submit" disabled={loading}
@@ -1361,9 +1405,9 @@ function LoginPage({ onBack }) {
             </button>
           </form>
 
-          <p className="mt-6 text-xs text-gray-400 text-center">
+          <p className="mt-6 text-xs text-gray-500 text-center">
             {mode === 'signin'
-              ? 'New member? Create an account with your school email.'
+              ? 'New member? Create an account with your school email. Forgot your password? Ask an officer at a meeting to reset it.'
               : 'New accounts join as students. Officers are given admin access by the board.'}
           </p>
         </div>
@@ -1378,6 +1422,8 @@ function LoginPage({ onBack }) {
    ================================================================ */
 
 function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout, onHome }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const pickTab = (id) => { setActiveTab(id); setMobileOpen(false) }
   const navItems = [
     { id: 'attendance', label: 'Attendance',     iconKey: 'attendance' },
     { id: 'mentor',     label: 'Mentor Sign-Up', iconKey: 'mentor'     },
@@ -1388,7 +1434,54 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout, onHome }
   ]
 
   return (
-    <aside className="w-60 min-h-screen bg-blue-950 flex flex-col flex-shrink-0">
+    <>
+    {/* Mobile top bar */}
+    <div className="md:hidden bg-blue-950 sticky top-0 z-40">
+      <div className="h-14 px-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            {Ico.logo('w-4 h-4 text-white')}
+          </div>
+          <p className="text-sm font-bold text-white truncate">STEM Research Club</p>
+        </div>
+        <button onClick={() => setMobileOpen(o => !o)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-white hover:bg-white/10 transition">
+          {mobileOpen ? Ico.x('w-5 h-5') : (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+      {mobileOpen && (
+        <nav className="px-3 pb-3 border-t border-white/10 animate-fade-in">
+          <div className="py-2 flex items-center gap-2.5 px-3">
+            <div className="w-6 h-6 rounded-full bg-green-700 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">{user.initials}</div>
+            <p className="text-xs text-blue-200 truncate">{user.name} · <span className="capitalize">{activeRole}</span></p>
+          </div>
+          {navItems.map(item => (
+            <button key={item.id} onClick={() => pickTab(item.id)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === item.id ? 'bg-green-700 text-white' : 'text-blue-200 hover:bg-white/5 hover:text-white'}`}>
+              {Ico[item.iconKey]('w-4 h-4 flex-shrink-0')}
+              {item.label}
+            </button>
+          ))}
+          <div className="mt-1 pt-1 border-t border-white/10">
+            <button onClick={onHome}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-blue-200 hover:bg-white/5 hover:text-white transition">
+              {Ico.location('w-4 h-4 flex-shrink-0')} View Homepage
+            </button>
+            <button onClick={onLogout}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-blue-200 hover:bg-white/5 hover:text-white transition">
+              {Ico.logout('w-4 h-4 flex-shrink-0')} Sign Out
+            </button>
+          </div>
+        </nav>
+      )}
+    </div>
+
+    {/* Desktop sidebar */}
+    <aside className="hidden md:flex w-60 min-h-screen bg-blue-950 flex-col flex-shrink-0">
       <button onClick={onHome} className="px-5 py-5 border-b border-white/10 text-left hover:bg-white/5 transition">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -1439,6 +1532,7 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout, onHome }
         </button>
       </div>
     </aside>
+    </>
   )
 }
 
@@ -1448,32 +1542,54 @@ function Sidebar({ activeTab, setActiveTab, user, activeRole, onLogout, onHome }
 
 function AttendanceTab({ user }) {
   const today    = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const todayISO = new Date().toISOString().split('T')[0]
+  const todayISO = localISODate()
 
   const [code, setCode]         = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [toast, setToast]       = useState(null)
   const [myLogs, setMyLogs]     = useState([])
+  const [fetchFailed, setFetchFailed] = useState(false)
   const [todayCode, setTodayCode] = useState('')   // admin: current code for today
   const [savingCode, setSavingCode] = useState(false)
+  const [recentCodes, setRecentCodes] = useState([])
 
   const fetchLogs = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('attendance_logs')
       .select('id, date, created_at')
       .eq('user_id', user.id)
       .order('date', { ascending: false })
+    setFetchFailed(!!fetchError)
     setMyLogs(data ?? [])
   }, [user.id])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
-  useEffect(() => {
+  const fetchCodes = useCallback(async () => {
     if (user.role !== 'admin') return
-    supabase.from('attendance_codes').select('code').eq('date', todayISO).maybeSingle()
-      .then(({ data }) => { if (data) setTodayCode(data.code) })
+    const { data } = await supabase
+      .from('attendance_codes')
+      .select('date, code')
+      .order('date', { ascending: false })
+      .limit(8)
+    setRecentCodes(data ?? [])
+    const todayRow = (data ?? []).find(c => c.date === todayISO)
+    if (todayRow) setTodayCode(todayRow.code)
   }, [user.role, todayISO])
+
+  useEffect(() => { fetchCodes() }, [fetchCodes])
+
+  const deleteCode = async (date) => {
+    const { error: delError } = await supabase.from('attendance_codes').delete().eq('date', date)
+    if (delError) {
+      setToast({ message: 'Could not delete the code.', type: 'error' })
+    } else {
+      setToast({ message: `Code for ${fmtDate(date)} deleted. It no longer counts as a meeting in the roster.`, type: 'info' })
+      if (date === todayISO) setTodayCode('')
+      fetchCodes()
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
@@ -1500,6 +1616,7 @@ function AttendanceTab({ user }) {
     setToast(upsertError
       ? { message: 'Could not save the code.', type: 'error' }
       : { message: `Today's code is set to ${todayCode.trim().toUpperCase()}.`, type: 'success' })
+    if (!upsertError) fetchCodes()
     setSavingCode(false)
   }
 
@@ -1525,6 +1642,24 @@ function AttendanceTab({ user }) {
               {savingCode ? 'Saving…' : 'Set Code'}
             </button>
           </form>
+          {recentCodes.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Recent codes</p>
+              <div className="space-y-1.5">
+                {recentCodes.map(c => (
+                  <div key={c.date} className="flex items-center gap-3 text-sm">
+                    <span className="text-gray-600 w-28">{fmtDate(c.date)}</span>
+                    <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-lg flex-1">{c.code}</span>
+                    <button onClick={() => deleteCode(c.date)}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition">
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-2">Deleting a code removes that date from the roster's meeting count.</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -1574,7 +1709,12 @@ function AttendanceTab({ user }) {
           <h3 className="text-sm font-semibold text-black">My Attendance History</h3>
           <p className="text-[11px] text-gray-400 mt-0.5">{myLogs.length} record{myLogs.length !== 1 ? 's' : ''} — your logs only</p>
         </div>
-        {myLogs.length === 0 ? (
+        {fetchFailed ? (
+          <div className="px-6 py-10 text-center">
+            <p className="text-sm text-gray-600 mb-3">Couldn't load your attendance history.</p>
+            <button onClick={fetchLogs} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Retry</button>
+          </div>
+        ) : myLogs.length === 0 ? (
           <div className="px-6 py-12 text-center text-sm text-gray-400">No attendance records yet.</div>
         ) : (
           <table className="w-full">
@@ -1610,18 +1750,23 @@ function MentorTab({ activeRole, user }) {
   const [expandedId, setExpandedId] = useState(null)
   const [toast, setToast]           = useState(null)
   const [showAdd, setShowAdd]       = useState(false)
+  const [deleteId, setDeleteId]     = useState(null)
+  const [fetchFailed, setFetchFailed] = useState(false)
   const [newShift, setNewShift]     = useState({ title: 'Mentoring shift', date: '', start_time: '3:30 PM', end_time: '5:00 PM', location: '', capacity: 8 })
 
   const fetchShifts = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('shifts')
-      .select('*, shift_signups(id, user_id, profiles(name, email))')
+      .select('*, shift_signups(id, user_id, profiles(name))')
       .order('date', { ascending: true })
+    setFetchFailed(!!fetchError)
     setShifts(data ?? [])
   }, [])
 
   useEffect(() => { fetchShifts() }, [fetchShifts])
 
+  const todayISO = localISODate()
+  const visibleShifts = activeRole === 'admin' ? shifts : shifts.filter(s => s.date >= todayISO)
   const confirmShift = shifts.find(s => s.id === confirmId)
 
   const handleConfirm = async () => {
@@ -1639,8 +1784,10 @@ function MentorTab({ activeRole, user }) {
   }
 
   const removeSignup = async (signupId, wasSelf) => {
-    await supabase.from('shift_signups').delete().eq('id', signupId)
-    setToast({ message: wasSelf ? 'Your sign-up was cancelled.' : 'Member removed from shift.', type: 'info' })
+    const { error: delError } = await supabase.from('shift_signups').delete().eq('id', signupId)
+    setToast(delError
+      ? { message: 'Could not remove the sign-up. Try again.', type: 'error' }
+      : { message: wasSelf ? 'Your sign-up was cancelled.' : 'Member removed from shift.', type: 'info' })
     fetchShifts()
   }
 
@@ -1658,9 +1805,12 @@ function MentorTab({ activeRole, user }) {
     }
   }
 
-  const deleteShift = async (id) => {
-    await supabase.from('shifts').delete().eq('id', id)
-    setToast({ message: 'Shift deleted.', type: 'info' })
+  const deleteShift = async () => {
+    const { error: delError } = await supabase.from('shifts').delete().eq('id', deleteId)
+    setDeleteId(null)
+    setToast(delError
+      ? { message: 'Could not delete the shift. Try again.', type: 'error' }
+      : { message: 'Shift deleted.', type: 'info' })
     fetchShifts()
   }
 
@@ -1685,19 +1835,25 @@ function MentorTab({ activeRole, user }) {
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-black">Available Shifts</h3>
         </div>
-        {shifts.length === 0 ? (
+        {fetchFailed ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-gray-600 mb-3">Couldn't load shifts.</p>
+            <button onClick={fetchShifts} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Retry</button>
+          </div>
+        ) : visibleShifts.length === 0 ? (
           <div className="py-12 text-center text-sm text-gray-400">
-            No shifts posted yet{activeRole === 'admin' ? ' — add one above.' : '. Check back after the next meeting.'}
+            No upcoming shifts{activeRole === 'admin' ? ' — add one above.' : '. Check back after the next meeting.'}
           </div>
         ) : (
         <div className="divide-y divide-gray-100">
-          {shifts.map(shift => {
+          {visibleShifts.map(shift => {
             const signups   = shift.shift_signups ?? []
             const taken     = signups.length
             const remaining = Math.max(shift.capacity - taken, 0)
             const signedUp  = signups.some(su => su.user_id === user.id)
             const pct       = (taken / shift.capacity) * 100
             const rosterOpen = expandedId === shift.id
+            const isPast    = shift.date < todayISO
 
             return (
               <div key={shift.id}>
@@ -1717,7 +1873,9 @@ function MentorTab({ activeRole, user }) {
                     </span>
                   </div>
 
-                  {signedUp ? (
+                  {isPast ? (
+                    <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-500 border border-gray-200 rounded-full text-xs font-medium">Past</span>
+                  ) : signedUp ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
                       {Ico.check('w-3 h-3')} Signed Up
                     </span>
@@ -1727,7 +1885,7 @@ function MentorTab({ activeRole, user }) {
                     <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-full text-xs font-medium">Open</span>
                   )}
 
-                  {signedUp ? (
+                  {isPast ? null : signedUp ? (
                     <button onClick={() => removeSignup(signups.find(su => su.user_id === user.id)?.id, true)}
                       className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-black transition">
                       Cancel
@@ -1751,7 +1909,7 @@ function MentorTab({ activeRole, user }) {
                         Roster ({taken})
                         {Ico.chevronDown(`w-3.5 h-3.5 transition-transform ${rosterOpen ? 'rotate-180' : ''}`)}
                       </button>
-                      <button onClick={() => deleteShift(shift.id)}
+                      <button onClick={() => setDeleteId(shift.id)}
                         className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition">
                         Delete
                       </button>
@@ -1773,8 +1931,7 @@ function MentorTab({ activeRole, user }) {
                             <div className="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                               {(su.profiles?.name ?? '?').charAt(0)}
                             </div>
-                            <span className="text-sm font-medium text-black">{su.profiles?.name ?? 'Member'}</span>
-                            <span className="text-xs text-gray-400 font-mono flex-1">{su.profiles?.email ?? ''}</span>
+                            <span className="text-sm font-medium text-black flex-1">{su.profiles?.name ?? 'Member'}</span>
                             <button
                               onClick={() => removeSignup(su.id, su.user_id === user.id)}
                               className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition flex-shrink-0">
@@ -1805,6 +1962,22 @@ function MentorTab({ activeRole, user }) {
           <div className="flex gap-2.5">
             <button onClick={() => setConfirmId(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
             <button onClick={handleConfirm} className="flex-1 py-2.5 rounded-xl bg-green-700 text-white text-sm font-semibold hover:bg-green-800 transition">Confirm</button>
+          </div>
+        </Modal>
+      )}
+
+      {deleteId !== null && (
+        <Modal title="Delete Shift" onClose={() => setDeleteId(null)}>
+          <p className="text-sm text-gray-600 mb-2">
+            Delete <span className="font-semibold text-black">{shifts.find(s => s.id === deleteId)?.title}</span> on{' '}
+            <span className="font-semibold text-black">{shifts.find(s => s.id === deleteId) ? fmtDate(shifts.find(s => s.id === deleteId).date) : ''}</span>?
+          </p>
+          <p className="text-xs text-gray-500 mb-5">
+            All {shifts.find(s => s.id === deleteId)?.shift_signups?.length ?? 0} sign-up(s) for this shift will be removed too. This cannot be undone.
+          </p>
+          <div className="flex gap-2.5">
+            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+            <button onClick={deleteShift} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition">Delete Shift</button>
           </div>
         </Modal>
       )}
@@ -1871,8 +2044,8 @@ function FormsTab() {
   const [toast, setToast]                 = useState(null)
 
   const requiredList = wizardDone
-    ? ['Form 1', 'Form 1A', 'NCSEF',
-        ...WIZARD_QUESTIONS.filter(q => answers[q.id] === 'yes').flatMap(q => q.required)]
+    ? [...new Set(['Form 1', 'Form 1A', 'NCSEF',
+        ...WIZARD_QUESTIONS.filter(q => answers[q.id] === 'yes').flatMap(q => q.required)])]
     : []
 
   const answerQ = (qId, val) => {
@@ -2059,14 +2232,17 @@ function ResearchTab({ activeRole, user }) {
   const [toast, setToast]           = useState(null)
   const [documents, setDocuments]   = useState([])
   const [uploading, setUploading]   = useState(false)
+  const [deleteDoc, setDeleteDoc]   = useState(null)   // { id, storagePath, file }
+  const [fetchFailed, setFetchFailed] = useState(false)
   const fileRef                     = useRef(null)
 
   const fetchDocs = useCallback(async () => {
     // RLS scopes this automatically: students get their own rows, admins get all.
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('documents')
       .select('*, profiles(name)')
       .order('created_at', { ascending: false })
+    setFetchFailed(!!fetchError)
     setDocuments((data ?? []).map(d => ({
       id: d.id,
       file: d.filename,
@@ -2103,7 +2279,9 @@ function ResearchTab({ activeRole, user }) {
         storage_path: path, size_bytes: file.size,
       })
       if (insertError) {
-        setToast({ message: 'Upload saved but could not be recorded. Ask an officer.', type: 'error' })
+        // Don't leave an unrecorded file in the bucket.
+        await supabase.storage.from('documents').remove([path])
+        setToast({ message: 'Upload failed. Try again.', type: 'error' })
       } else {
         setToast({ message: `${file.name} uploaded — pending review.`, type: 'success' })
         fetchDocs()
@@ -2113,21 +2291,44 @@ function ResearchTab({ activeRole, user }) {
   }
 
   const openViewer = async (doc) => {
-    const { data } = await supabase.storage.from('documents').createSignedUrl(doc.storagePath, 3600)
-    setViewerDoc({ ...doc, pdfSrc: data?.signedUrl ?? null })
+    const [{ data: view, error: viewError }, { data: dl }] = await Promise.all([
+      supabase.storage.from('documents').createSignedUrl(doc.storagePath, 3600),
+      supabase.storage.from('documents').createSignedUrl(doc.storagePath, 3600, { download: doc.file }),
+    ])
+    if (viewError || !view?.signedUrl) {
+      setToast({ message: "Couldn't load the preview. Try again in a moment.", type: 'error' })
+      return
+    }
+    setViewerDoc({ ...doc, pdfSrc: view.signedUrl, downloadUrl: dl?.signedUrl ?? view.signedUrl })
   }
 
   const handleFiles = (e) => { if (e.target.files[0]) addDoc(e.target.files[0]); e.target.value = '' }
   const handleDrop  = (e) => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files[0]) addDoc(e.dataTransfer.files[0]) }
   const approve     = async (id) => {
-    await supabase.from('documents').update({ status: 'approved', feedback: null }).eq('id', id)
-    setToast({ message: 'Document approved.', type: 'success' }); fetchDocs()
+    const { error: updError } = await supabase.from('documents').update({ status: 'approved', feedback: null }).eq('id', id)
+    setToast(updError
+      ? { message: 'Could not approve the document. Try again.', type: 'error' }
+      : { message: 'Document approved.', type: 'success' })
+    fetchDocs()
   }
   const submitDeny  = async () => {
     if (!denyReason.trim()) return
-    await supabase.from('documents').update({ status: 'denied', feedback: denyReason.trim() }).eq('id', denyDocId)
-    setToast({ message: 'Feedback sent to student.', type: 'info' })
+    const { error: updError } = await supabase.from('documents').update({ status: 'denied', feedback: denyReason.trim() }).eq('id', denyDocId)
+    setToast(updError
+      ? { message: 'Could not send the feedback. Try again.', type: 'error' }
+      : { message: 'Feedback sent to student.', type: 'info' })
     setDenyDocId(null); setDenyReason(''); fetchDocs()
+  }
+  const confirmDeleteDoc = async () => {
+    const { error: storageError } = await supabase.storage.from('documents').remove([deleteDoc.storagePath])
+    // A missing storage object shouldn't block removing the record.
+    const { error: rowError } = await supabase.from('documents').delete().eq('id', deleteDoc.id)
+    setDeleteDoc(null)
+    setToast(rowError
+      ? { message: 'Could not delete the document. Try again.', type: 'error' }
+      : { message: `${deleteDoc.file} deleted.`, type: 'info' })
+    if (storageError && !rowError) console.warn('Storage object not removed:', storageError.message)
+    fetchDocs()
   }
 
   const stats = [
@@ -2161,6 +2362,12 @@ function ResearchTab({ activeRole, user }) {
               <button onClick={() => approve(doc.id)} className="px-3 py-1.5 bg-green-600 text-white rounded-xl text-xs font-semibold hover:bg-green-700 transition">Approve</button>
               <button onClick={() => { setDenyDocId(doc.id); setDenyReason('') }} className="px-3 py-1.5 bg-red-500 text-white rounded-xl text-xs font-semibold hover:bg-red-600 transition">Deny</button>
             </>
+          )}
+          {(activeRole === 'admin' || (doc.studentId === user.id && doc.status === 'Pending Review')) && (
+            <button onClick={() => setDeleteDoc(doc)}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition">
+              Delete
+            </button>
           )}
         </div>
       </div>
@@ -2203,7 +2410,7 @@ function ResearchTab({ activeRole, user }) {
               ))}
             </div>
             <div onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)}
-              onDrop={handleDrop} onClick={() => fileRef.current?.click()}
+              onDrop={uploading ? undefined : handleDrop} onClick={() => { if (!uploading) fileRef.current?.click() }}
               className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${dragging ? 'border-green-700 bg-gray-50 scale-[1.01]' : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'}`}>
               <input ref={fileRef} type="file" className="hidden" onChange={handleFiles} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
               {Ico.upload('w-10 h-10 text-gray-300 mx-auto mb-3')}
@@ -2217,7 +2424,12 @@ function ResearchTab({ activeRole, user }) {
               <h3 className="text-sm font-semibold text-black">My Submissions</h3>
               <p className="text-[11px] text-gray-400 mt-0.5">{myDocs.length} document{myDocs.length !== 1 ? 's' : ''} · click a filename to preview</p>
             </div>
-            {myDocs.length === 0 ? <div className="py-12 text-center text-sm text-gray-400">No documents uploaded yet.</div>
+            {fetchFailed ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-gray-600 mb-3">Couldn't load your documents.</p>
+                <button onClick={fetchDocs} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Retry</button>
+              </div>
+            ) : myDocs.length === 0 ? <div className="py-12 text-center text-sm text-gray-400">No documents uploaded yet.</div>
               : <div className="divide-y divide-gray-50">{myDocs.map(d => <FileRow key={d.id} doc={d} />)}</div>}
           </div>
         </>
@@ -2238,9 +2450,18 @@ function ResearchTab({ activeRole, user }) {
               <h3 className="text-sm font-semibold text-black">Review Queue</h3>
               <p className="text-[11px] text-gray-400 mt-0.5">Click any filename to open the document viewer</p>
             </div>
-            <div className="divide-y divide-gray-50">
-              {documents.map(d => <FileRow key={d.id} doc={d} showStudent />)}
-            </div>
+            {fetchFailed ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-gray-600 mb-3">Couldn't load the review queue.</p>
+                <button onClick={fetchDocs} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Retry</button>
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="py-12 text-center text-sm text-gray-400">No submissions yet.</div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {documents.map(d => <FileRow key={d.id} doc={d} showStudent />)}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -2254,6 +2475,19 @@ function ResearchTab({ activeRole, user }) {
           <div className="flex gap-2.5 mt-4">
             <button onClick={() => setDenyDocId(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
             <button onClick={submitDeny} disabled={!denyReason.trim()} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition disabled:opacity-40 disabled:cursor-not-allowed">Send Feedback</button>
+          </div>
+        </Modal>
+      )}
+
+      {deleteDoc && (
+        <Modal title="Delete Document" onClose={() => setDeleteDoc(null)}>
+          <p className="text-sm text-gray-600 mb-2">
+            Delete <span className="font-semibold text-black">{deleteDoc.file}</span>?
+          </p>
+          <p className="text-xs text-gray-500 mb-5">The file is removed from storage permanently. This cannot be undone.</p>
+          <div className="flex gap-2.5">
+            <button onClick={() => setDeleteDoc(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+            <button onClick={confirmDeleteDoc} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition">Delete</button>
           </div>
         </Modal>
       )}
@@ -2272,13 +2506,16 @@ function SupportTab({ user, activeRole }) {
   const [replyText, setReplyText]   = useState('')
   const [toast, setToast]           = useState(null)
   const [tickets, setTickets]       = useState([])
+  const [deleteTicket, setDeleteTicket] = useState(null)   // { id, subject }
+  const [fetchFailed, setFetchFailed] = useState(false)
 
   const fetchTickets = useCallback(async () => {
     // RLS scopes this automatically: students see their own, admins see all.
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('tickets')
       .select('*, profiles(name), ticket_replies(id, body, created_at)')
       .order('created_at', { ascending: false })
+    setFetchFailed(!!fetchError)
     setTickets((data ?? []).map(t => {
       const replies = [...(t.ticket_replies ?? [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       return {
@@ -2323,11 +2560,21 @@ function SupportTab({ user, activeRole }) {
     if (error) {
       setToast({ message: 'Could not send the reply. Try again.', type: 'error' })
     } else {
-      await supabase.from('tickets').update({ status: 'answered' }).eq('id', id)
+      const { error: statusError } = await supabase.from('tickets').update({ status: 'answered' }).eq('id', id)
+      if (statusError) console.warn('Reply saved but status not updated:', statusError.message)
       setToast({ message: 'Reply sent to student.', type: 'success' })
       setReplyingId(null); setReplyText('')
       fetchTickets()
     }
+  }
+
+  const confirmDeleteTicket = async () => {
+    const { error: delError } = await supabase.from('tickets').delete().eq('id', deleteTicket.id)
+    setDeleteTicket(null)
+    setToast(delError
+      ? { message: 'Could not delete the question. Try again.', type: 'error' }
+      : { message: 'Question deleted.', type: 'info' })
+    fetchTickets()
   }
 
   return (
@@ -2370,7 +2617,12 @@ function SupportTab({ user, activeRole }) {
               <h3 className="text-sm font-semibold text-black">My Questions</h3>
               <p className="text-[11px] text-gray-400 mt-0.5">{myTickets.length} question{myTickets.length !== 1 ? 's' : ''}</p>
             </div>
-            {myTickets.length === 0 ? (
+            {fetchFailed ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-gray-600 mb-3">Couldn't load your questions.</p>
+                <button onClick={fetchTickets} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Retry</button>
+              </div>
+            ) : myTickets.length === 0 ? (
               <div className="py-12 text-center text-sm text-gray-400">No questions submitted yet.</div>
             ) : (
               <div className="divide-y divide-gray-50">
@@ -2378,7 +2630,13 @@ function SupportTab({ user, activeRole }) {
                   <div key={t.id} className="px-6 py-4">
                     <div className="flex items-start justify-between gap-3 mb-1">
                       <p className="text-sm font-semibold text-black">{t.subject}</p>
-                      <Badge status={t.status} />
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge status={t.status} />
+                        <button onClick={() => setDeleteTicket(t)}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition">
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-400 mb-2">{t.date} · {t.time}</p>
                     <p className="text-sm text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-100">{t.message}</p>
@@ -2405,7 +2663,12 @@ function SupportTab({ user, activeRole }) {
               <p className="text-[11px] text-gray-400 mt-0.5">{allTickets.length} total · {allTickets.filter(t => t.status === 'Unanswered').length} unanswered</p>
             </div>
           </div>
-          {allTickets.length === 0 ? (
+          {fetchFailed ? (
+            <div className="py-10 text-center">
+              <p className="text-sm text-gray-600 mb-3">Couldn't load the inbox.</p>
+              <button onClick={fetchTickets} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Retry</button>
+            </div>
+          ) : allTickets.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-400">No questions yet.</div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -2418,7 +2681,13 @@ function SupportTab({ user, activeRole }) {
                         <span className="font-semibold text-gray-600">{t.studentName}</span> · {t.date} · {t.time}
                       </p>
                     </div>
-                    <Badge status={t.status} />
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge status={t.status} />
+                      <button onClick={() => setDeleteTicket(t)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition">
+                        Delete
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-100 mt-2">{t.message}</p>
 
@@ -2455,6 +2724,19 @@ function SupportTab({ user, activeRole }) {
           )}
         </div>
       )}
+
+      {deleteTicket && (
+        <Modal title="Delete Question" onClose={() => setDeleteTicket(null)}>
+          <p className="text-sm text-gray-600 mb-2">
+            Delete <span className="font-semibold text-black">{deleteTicket.subject}</span>?
+          </p>
+          <p className="text-xs text-gray-500 mb-5">The question and any replies are removed permanently.</p>
+          <div className="flex gap-2.5">
+            <button onClick={() => setDeleteTicket(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+            <button onClick={confirmDeleteTicket} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition">Delete</button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
@@ -2472,7 +2754,8 @@ function RosterTab() {
   useEffect(() => {
     (async () => {
       const [{ data: profiles }, { data: codes }, { data: logRows }] = await Promise.all([
-        supabase.from('profiles').select('id, name, email, role').order('name'),
+        // Emails are admin-only; this definer RPC returns them for admins.
+        supabase.rpc('admin_list_profiles'),
         supabase.from('attendance_codes').select('date').order('date'),
         supabase.from('attendance_logs').select('user_id, date'),
       ])
@@ -2485,10 +2768,11 @@ function RosterTab() {
   const present = (memberId, date) => logs.some(l => l.user_id === memberId && l.date === date)
 
   const handleExport = () => {
-    const header = ['Student', 'Email', ...meetingDates.map(fmtDate)].join(',')
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const header = ['Student', 'Email', ...meetingDates.map(fmtDate)].map(q).join(',')
     const rows = members.map(m => {
       const cols = meetingDates.map(d => (present(m.id, d) ? 'Present' : 'Absent'))
-      return [m.name, m.email ?? '', ...cols].join(',')
+      return [m.name, m.email ?? '', ...cols].map(q).join(',')
     })
     downloadText('STEMRC_Attendance_Roster.csv', [header, ...rows].join('\n'))
     setToast({ message: 'STEMRC_Attendance_Roster.csv exported successfully.', type: 'success' })
@@ -2597,7 +2881,9 @@ export default function App() {
   const [session, setSession]     = useState(null)
   const [user, setUser]           = useState(null)     // profile: { id, email, name, role, initials }
   const [authReady, setAuthReady] = useState(false)
+  const [profileError, setProfileError] = useState(false)
   const [activeTab, setActiveTab] = useState('attendance')
+  const lastUserId                = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -2609,18 +2895,23 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!session) { setUser(null); return }
+    if (!session) { setUser(null); lastUserId.current = null; return }
     let cancelled = false
-    supabase.from('profiles').select('*').eq('id', session.user.id).single().then(({ data }) => {
+    supabase.from('profiles').select('id, name, role').eq('id', session.user.id).single().then(({ data, error }) => {
       if (cancelled) return
-      if (data) {
-        setUser({
-          id: data.id,
-          email: session.user.email,
-          name: data.name,
-          role: data.role,
-          initials: initialsOf(data.name),
-        })
+      if (error || !data) { setProfileError(true); return }
+      setProfileError(false)
+      setUser({
+        id: data.id,
+        email: session.user.email,
+        name: data.name,
+        role: data.role,
+        initials: initialsOf(data.name),
+      })
+      // Only jump into the portal on an actual sign-in, not on
+      // token refreshes (which would wipe in-progress tab state).
+      if (lastUserId.current !== data.id) {
+        lastUserId.current = data.id
         setActiveTab('attendance')
         setView('portal')
       }
@@ -2644,6 +2935,21 @@ export default function App() {
 
   if (!user) {
     if (session) {
+      if (profileError) {
+        return (
+          <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 p-6 text-center">
+            <p className="text-sm text-gray-600 max-w-sm">
+              Signed in, but your member profile couldn't be loaded. Check your connection and reload, or sign out and try again.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => window.location.reload()}
+                className="px-4 py-2 rounded-md bg-green-700 text-white text-sm font-semibold hover:bg-green-800 transition">Reload</button>
+              <button onClick={logout}
+                className="px-4 py-2 rounded-md border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-500 transition">Sign Out</button>
+            </div>
+          </div>
+        )
+      }
       // Signed in, profile still loading.
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -2663,11 +2969,11 @@ export default function App() {
   const activeRole = user.role
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} activeRole={activeRole} onLogout={logout} onHome={() => setView('home')} />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8 pb-24">
+        <div className="p-4 sm:p-6 md:p-8 pb-24">
           {activeTab === 'attendance' && <AttendanceTab user={user} />}
           {activeTab === 'mentor'   && <MentorTab activeRole={activeRole} user={user} />}
           {activeTab === 'forms'    && <FormsTab />}
