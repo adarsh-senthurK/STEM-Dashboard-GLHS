@@ -18,8 +18,10 @@ questions.
 
 **Current state: fully operational.** Auth, database, and file storage run on
 **Supabase** (project `stemrc`, free tier, org "GLHS STEMRC"); hosting is
-**Vercel** (project `stem-dashboard-glhs`, Hobby tier) at
-https://stem-dashboard-glhs.vercel.app. Role (`student` vs `admin`) comes from
+**Cloudflare Pages** (project `glstem`, free tier) at **https://glstem.site**
+(also glstem.pages.dev). The old Vercel deployment
+(stem-dashboard-glhs.vercel.app) is kept temporarily so old links work;
+retire it once the new URL circulates. Role (`student` vs `admin`) comes from
 the `profiles` table. Students self-register on the login page (Create Account:
 name, email, password → `auth.signUp` with name in user metadata); a DB trigger
 auto-creates their profile as `student`. Email confirmation is DISABLED in
@@ -94,10 +96,16 @@ npm run build          # production build → dist/
 
 ## Deploy
 
-- **Vercel** (`vercel.json`: framework vite, build `npm run build`, output `dist`).
+- **Cloudflare Pages** (project `glstem`): auto-builds `main` on push via the
+  GitHub integration — build `npm run build`, output `dist`, env vars set in
+  the Pages project settings. Custom domain: `glstem.site` (zone is on the
+  same Cloudflare account).
+- **Vercel** (`vercel.json`) still auto-deploys as the legacy URL during the
+  transition; delete the Vercel project when it's no longer needed.
 - **Build quirk (don't "fix" it):** the npm scripts call Vite as
   `node node_modules/vite/bin/vite.js` rather than the `vite` bin — a deliberate
-  workaround for a Vercel exit-126 / `.bin` permission problem. Keep it.
+  workaround for a Vercel exit-126 / `.bin` permission problem. Harmless on
+  Cloudflare; keep it while Vercel is alive.
 
 ## Conventions & gotchas (read before editing)
 
