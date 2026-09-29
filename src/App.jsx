@@ -791,10 +791,6 @@ const BOARD_MEMBERS = [
   { role: 'Director of Organization & Publicity', name: 'Gio Sayde',   email: 'gsayde@students.wcpss.net' },
 ]
 
-const ADVISORS = [
-  { role: 'Faculty Advisor', name: '[Advisor Name]', email: 'advisor@wcpss.net' },
-]
-
 const HOME_PROGRAMS = [
   { title: 'Meeting presentations', desc: 'At each meeting an officer presents one part of the research process: forming a question, reviewing literature, designing an experiment, analyzing data, writing it up. Slides stay available to members afterward.' },
   { title: 'Project mentorship', desc: 'Members can work with a mentor experienced in their field, and first-time researchers are paired with members who have been through a competition season already.' },
@@ -964,10 +960,19 @@ function HomePage({ onLoginClick, signedIn = false }) {
       {/* ---------- PHOTO STRIP ---------- */}
       <section className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MediaPlaceholder label="Club meeting" className="aspect-[4/3] md:col-span-2 md:aspect-auto" />
-            <MediaPlaceholder label="Fair day" className="aspect-[4/3]" />
-            <MediaPlaceholder label="Outreach event" className="aspect-[4/3]" />
+          <div className="grid md:grid-cols-3 gap-4">
+            <figure className="md:col-span-2">
+              <img src="/photos/isef-shoutout.jpg" loading="lazy"
+                alt="Finalists from dozens of countries holding hand-drawn posters on stage at the ISEF International Shout Out ceremony"
+                className="rounded-xl border border-gray-200 w-full aspect-[16/9] object-cover" />
+              <figcaption className="mt-2 text-xs text-gray-500">International Shout Out ceremony at Regeneron ISEF 2026.</figcaption>
+            </figure>
+            <figure>
+              <img src="/photos/isef-2026-phoenix.jpg" loading="lazy"
+                alt="The Regeneron ISEF Phoenix 2026 opening ceremony stage under purple and blue lights"
+                className="rounded-xl border border-gray-200 w-full aspect-[16/9] md:aspect-auto md:h-full object-cover object-[center_60%]" />
+              <figcaption className="mt-2 text-xs text-gray-500">Opening ceremony, Regeneron ISEF 2026 in Phoenix.</figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -996,7 +1001,12 @@ function HomePage({ onLoginClick, signedIn = false }) {
               running it ethically.
             </p>
           </div>
-          <MediaPlaceholder label="Meeting photo" className="aspect-[4/3]" />
+          <figure>
+            <img src="/photos/club-meeting.jpg" loading="lazy"
+              alt="Club officers presenting a What We Do slide to students in a Green Level classroom"
+              className="rounded-xl border border-gray-200 w-full aspect-[4/3] object-cover" />
+            <figcaption className="mt-2 text-xs text-gray-500">Officers presenting at an interest meeting.</figcaption>
+          </figure>
         </div>
       </section>
 
@@ -1161,39 +1171,22 @@ function HomePage({ onLoginClick, signedIn = false }) {
       {/* ---------- OFFICERS ---------- */}
       <section id="officers" className="scroll-mt-20 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
-          <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Officers and advisor</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 tracking-tight">Officers</h2>
           <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl">
             Our 2026–27 roster is coming soon. The board below is from the 2025–26 school year.
           </p>
           <div className="mt-8 grid md:grid-cols-2 gap-x-12 divide-y md:divide-y-0 border-t border-gray-200 md:border-t-0">
-            <div className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
-              {[...BOARD_MEMBERS.slice(0, 5)].map(m => (
-                <div key={m.email} className="py-4 flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-full bg-blue-950 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {m.name.startsWith('[') ? '?' : initialsOf(m.name)}
-                  </div>
-                  <div className="min-w-0">
+            {[BOARD_MEMBERS.slice(0, 5), BOARD_MEMBERS.slice(5)].map((column, ci) => (
+              <div key={ci} className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
+                {column.map(m => (
+                  <div key={m.email} className="py-4">
                     <p className="text-[15px] font-semibold text-blue-950">{m.name}</p>
                     <p className="text-sm text-gray-500">{m.role}</p>
                     <a href={`mailto:${m.email}`} className="text-xs text-gray-500 hover:text-green-700 transition truncate block">{m.email}</a>
                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="divide-y divide-gray-200 md:border-t md:border-b md:border-gray-200">
-              {[...BOARD_MEMBERS.slice(5), ...ADVISORS].map(m => (
-                <div key={m.email} className="py-4 flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-full bg-blue-950 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {m.name.startsWith('[') ? '?' : initialsOf(m.name)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[15px] font-semibold text-blue-950">{m.name}</p>
-                    <p className="text-sm text-gray-500">{m.role}</p>
-                    <a href={`mailto:${m.email}`} className="text-xs text-gray-500 hover:text-green-700 transition truncate block">{m.email}</a>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </section>
