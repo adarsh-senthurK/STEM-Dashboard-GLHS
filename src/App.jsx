@@ -1067,9 +1067,14 @@ function HomePage({ onLoginClick, signedIn = false }) {
                 the journal, or simply finished for their own sake.
               </p>
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <MediaPlaceholder label="Project photo" className="aspect-[4/3] bg-white" />
-                <MediaPlaceholder label="Project photo" className="aspect-[4/3] bg-white" />
+                <img src="/photos/fair-presentation.jpg" loading="lazy"
+                  alt="Two students presenting their science fair poster boards to an audience"
+                  className="rounded-xl border border-gray-200 w-full aspect-[4/3] object-cover" />
+                <img src="/photos/fair-judging.jpg" loading="lazy"
+                  alt="A high school student presenting his project display board to fair judges"
+                  className="rounded-xl border border-gray-200 w-full aspect-[4/3] object-cover" />
               </div>
+              <p className="mt-2 text-xs text-gray-500">Science fair presentations. U.S. Air Force / NRC photos, public domain.</p>
             </div>
             <div>
               <h3 className="text-lg font-bold text-blue-950">Outreach and community service</h3>
@@ -1078,7 +1083,6 @@ function HomePage({ onLoginClick, signedIn = false }) {
                 community, organized by our three Directors of Outreach &amp; Community Service.
                 Details for the current year's events are announced at meetings and on Instagram.
               </p>
-              <MediaPlaceholder label="Service event photo" className="mt-6 aspect-[16/7] bg-white" />
             </div>
           </div>
         </div>
@@ -1100,7 +1104,7 @@ function HomePage({ onLoginClick, signedIn = false }) {
               editing side rather than as an author, talk to the Director of Research at a meeting.
             </p>
           </div>
-          <MediaPlaceholder label="Journal cover" className="aspect-[3/4]" />
+          <MediaPlaceholder label="2026 cover coming soon" className="aspect-[3/4]" />
         </div>
       </section>
 
