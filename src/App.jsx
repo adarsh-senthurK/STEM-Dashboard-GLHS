@@ -1067,14 +1067,14 @@ function HomePage({ onLoginClick, signedIn = false }) {
                 the journal, or simply finished for their own sake.
               </p>
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <img src="/photos/fair-presentation.jpg" loading="lazy"
-                  alt="Two students presenting their science fair poster boards to an audience"
-                  className="rounded-xl border border-gray-200 w-full aspect-[4/3] object-cover" />
-                <img src="/photos/fair-judging.jpg" loading="lazy"
-                  alt="A high school student presenting his project display board to fair judges"
-                  className="rounded-xl border border-gray-200 w-full aspect-[4/3] object-cover" />
+                <img src="/photos/project-scfa.jpg" loading="lazy"
+                  alt="A club member with the poster for a short-chain fatty acid neurogenesis research project"
+                  className="rounded-xl border border-gray-200 w-full aspect-[3/4] object-cover" />
+                <img src="/photos/isef-booth.jpg" loading="lazy"
+                  alt="A Green Level project booth on the exhibit floor at Regeneron ISEF 2026"
+                  className="rounded-xl border border-gray-200 w-full aspect-[3/4] object-cover" />
               </div>
-              <p className="mt-2 text-xs text-gray-500">Science fair presentations. U.S. Air Force / NRC photos, public domain.</p>
+              <p className="mt-2 text-xs text-gray-500">Member projects: SCFA neurogenesis research, and a Green Level booth at Regeneron ISEF 2026.</p>
             </div>
             <div>
               <h3 className="text-lg font-bold text-blue-950">Outreach and community service</h3>
@@ -1104,7 +1104,12 @@ function HomePage({ onLoginClick, signedIn = false }) {
               editing side rather than as an author, talk to the Director of Research at a meeting.
             </p>
           </div>
-          <MediaPlaceholder label="2026 cover coming soon" className="aspect-[3/4]" />
+          <div className="relative overflow-hidden rounded-xl aspect-[3/4] bg-black border border-gray-800 flex flex-col items-center justify-center text-center p-8">
+            <div aria-hidden="true" className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-green-500/30 blur-3xl" />
+            <div aria-hidden="true" className="absolute -bottom-20 -left-16 w-72 h-72 rounded-full bg-green-700/25 blur-3xl" />
+            <p className="relative text-xs font-bold tracking-widest text-green-400 uppercase">The Green Level Journal</p>
+            <p className="relative mt-3 text-2xl font-bold text-white leading-snug">2026 cover<br />coming soon</p>
+          </div>
         </div>
       </section>
 
